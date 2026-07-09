@@ -15,7 +15,7 @@ export function Sidebar() {
   const [active, setActive] = useState('chats')
 
   return (
-    <nav className="w-16 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center py-3 gap-1">
+    <nav className="w-16 bg-white dark:bg-gray-900 border-r border-gray-600 dark:border-gray-700 flex flex-col items-center py-3 gap-1">
       {navItems.map((item) => (
         <Button
           key={item.id}

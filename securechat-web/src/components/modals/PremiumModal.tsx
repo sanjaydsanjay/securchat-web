@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Dialog } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,7 +21,7 @@ export function PremiumModal({ open, onClose }: PremiumModalProps) {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-sm">{plan.name}</h3>
-                  <Badge variant="secondary">+{plan.messages} msgs</Badge>
+                  <Badge variant="secondary">{plan.days}d Access</Badge>
                 </div>
                 <ul className="mt-1 space-y-0.5">
                   <li className="text-xs text-gray-500 flex items-center gap-1">
@@ -34,7 +35,7 @@ export function PremiumModal({ open, onClose }: PremiumModalProps) {
             </div>
             <div className="text-right">
               <p className="text-lg font-bold">₹{plan.price}</p>
-              <p className="text-xs text-gray-400">/month</p>
+              <p className="text-xs text-gray-400">{plan.days} days</p>
             </div>
           </div>
         ))}

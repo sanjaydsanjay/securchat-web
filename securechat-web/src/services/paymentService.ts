@@ -9,6 +9,7 @@ export const paymentService = {
       name: plan.name,
       price: plan.price,
       currency: 'INR',
+      days: plan.days,
       messages_per_month: plan.messages,
       max_file_size_mb: plan.fileSize,
       features: [],
@@ -20,11 +21,14 @@ export const paymentService = {
     const { data, error } = await supabase
       .from('payments')
       .insert({
-        plan: payload.plan,
-        amount: PREMIUM_PLANS[payload.plan].price,
-        currency: 'INR',
-        payment_method: payload.payment_method || null,
+        plan_name: payload.plan_name,
+        amount: payload.amount,
+        payment_method: payload.payment_method,
+        transaction_id: payload.transaction_id || null,
         screenshot_url: payload.screenshot_url || null,
+        razorpay_payment_id: payload.razorpay_payment_id || null,
+        razorpay_order_id: payload.razorpay_order_id || null,
+        status: 'pending',
       })
       .select()
       .single()
@@ -32,30 +36,41 @@ export const paymentService = {
   },
 
   async getPaymentHistory(): Promise<{ data: Payment[] | null; error: unknown }> {
+    const user = (await supabase.auth.getUser()).data.user
+    if (!user) return { data: null, error: 'Not authenticated' }
+
     const { data, error } = await supabase
       .from('payments')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     return { data: data as Payment[] | null, error }
   },
 
-  async verifyPayment(paymentId: string, adminUserId: string) {
+  async getAllPendingPayments(): Promise<{ data: Payment[] | null; error: unknown }> {
     const { data, error } = await supabase
       .from('payments')
-      .update({ status: 'verified', verified_by: adminUserId, verified_at: new Date().toISOString() })
-      .eq('id', paymentId)
-      .select()
-      .single()
-    return { data: data as Payment | null, error }
+      .select('*, users:user_id(display_name, unique_id, email)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+    return { data: data as any, error }
   },
 
-  async rejectPayment(paymentId: string, adminUserId: string) {
-    const { data, error } = await supabase
-      .from('payments')
-      .update({ status: 'failed', verified_by: adminUserId, verified_at: new Date().toISOString() })
-      .eq('id', paymentId)
-      .select()
-      .single()
-    return { data: data as Payment | null, error }
+  async approvePayment(paymentId: string) {
+    const { error } = await supabase.rpc('admin_approve_payment', { p_payment_id: paymentId })
+    return { error }
+  },
+
+  async rejectPayment(paymentId: string) {
+    const { error } = await supabase.rpc('admin_reject_payment', { p_payment_id: paymentId })
+    return { error }
+  },
+
+  async checkTrial(): Promise<{ data: any; error: unknown }> {
+    const user = (await supabase.auth.getUser()).data.user
+    if (!user) return { data: null, error: 'Not authenticated' }
+
+    const { data, error } = await supabase.rpc('check_and_expire_trials', { p_user_id: user.id })
+    return { data, error }
   },
 }

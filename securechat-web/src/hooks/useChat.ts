@@ -75,11 +75,18 @@ export function useChat() {
           } else if (payload.eventType === 'UPDATE') {
             const chat = payload.new as Chat
             if (
-              chat.participant_1_id === user.unique_id ||
-              chat.participant_2_id === user.unique_id
-            ) {
-              updateChat(chat.id, chat)
+              chat.participant_1_id !== user.unique_id &&
+              chat.participant_2_id !== user.unique_id
+            ) return
+
+            // If current user deleted this chat, remove from store
+            if (chat.deleted_for?.includes(user.unique_id)) {
+              const store = useChatStore.getState()
+              store.setChats(store.chats.filter((c) => c.id !== chat.id))
+              if (store.activeChatId === chat.id) store.setActiveChatId(null)
+              return
             }
+            updateChat(chat.id, chat)
           }
         }
       )

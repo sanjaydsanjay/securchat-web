@@ -5,7 +5,8 @@ import { MessageInput } from './MessageInput'
 import { TypingIndicator } from './TypingIndicator'
 import { Loader } from '@/components/shared/Loader'
 import { Input } from '@/components/ui/input'
-import { Search, X, Lock } from 'lucide-react'
+import { Dialog } from '@/components/ui/dialog'
+import { Search, X, Lock, Trash2 } from 'lucide-react'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import { useChatStore } from '@/stores/chatStore'
@@ -21,6 +22,8 @@ interface ChatWindowProps {
 
 function ChatWindowInner({ chatId }: ChatWindowProps) {
   const [showSearch, setShowSearch] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string; forEveryone: boolean } | null>(null)
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('')
   const { messages, loading, hasMore, loadingMore, loadMore, sendMessage, editMessage, deleteMessage, addReaction, toggleStar, markAllAsRead } = useMessages(chatId)
   const { startTyping } = useTypingIndicator(chatId)
   const chats = useChatStore((s) => s.chats)
@@ -119,6 +122,19 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
   }
 
   const handleTyping = () => { startTyping() }
+
+  const handleDeleteClick = useCallback((messageId: string, forEveryone: boolean) => {
+    setDeleteConfirm({ messageId, forEveryone })
+    setDeleteConfirmInput('')
+  }, [])
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteConfirm) return
+    const { messageId, forEveryone } = deleteConfirm
+    setDeleteConfirm(null)
+    setDeleteConfirmInput('')
+    await deleteMessage(messageId, forEveryone ? 'everyone' : 'me')
+  }, [deleteConfirm, deleteMessage])
 
   const handleStar = useCallback(async (messageId: string) => {
     const store = useUserStore.getState()
@@ -227,7 +243,7 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
                   message={msg}
                   chat={chat}
                   onEdit={(content) => editMessage(msg.id, content)}
-                  onDelete={(forEveryone) => deleteMessage(msg.id, forEveryone ? 'everyone' : 'me')}
+                  onDelete={(forEveryone) => handleDeleteClick(msg.id, forEveryone)}
                   onReact={(emoji) => addReaction(msg.id, emoji)}
                   onStar={() => handleStar(msg.id)}
                 />
@@ -245,6 +261,38 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
         onSend={handleSend}
         onTyping={handleTyping}
       />
+
+      <Dialog
+        open={!!deleteConfirm}
+        onClose={() => { setDeleteConfirm(null); setDeleteConfirmInput('') }}
+        title={deleteConfirm?.forEveryone ? 'Delete for everyone' : 'Delete for me'}
+        description="Type your unique ID to confirm deletion. This action cannot be undone."
+      >
+        <div className="space-y-4">
+          <Input
+            placeholder="Enter your unique ID"
+            value={deleteConfirmInput}
+            onChange={(e) => setDeleteConfirmInput(e.target.value)}
+            autoFocus
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => { setDeleteConfirm(null); setDeleteConfirmInput('') }}
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDeleteConfirm}
+              disabled={deleteConfirmInput !== String(user?.unique_id ?? '')}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }

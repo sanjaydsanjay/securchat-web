@@ -3,9 +3,21 @@ import type { Chat, CreateChatPayload } from '@/types/chat'
 
 export const chatService = {
   async getChats(limit = 100): Promise<{ data: Chat[] | null; error: unknown }> {
+    const currentUser = (await supabase.auth.getUser()).data.user
+    if (!currentUser) return { data: null, error: 'Not authenticated' }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('unique_id')
+      .eq('auth_id', currentUser.id)
+      .single()
+
+    if (!user) return { data: null, error: 'User not found' }
+
     const { data, error } = await supabase
       .from('chats')
       .select('*')
+      .not('deleted_for', 'cs', `{${user.unique_id}}`)
       .order('last_message_time', { ascending: false, nullsFirst: false })
       .limit(limit)
     return { data: data as Chat[] | null, error }
@@ -86,6 +98,12 @@ export const chatService = {
       .select()
       .single()
     return { data: data as Chat | null, error }
+  },
+
+  async deleteChat(chatId: string): Promise<{ error: unknown }> {
+    const { error } = await supabase
+      .rpc('delete_chat_for_me', { chat_id: chatId })
+    return { error }
   },
 
   async archiveChat(chatId: string) {

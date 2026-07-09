@@ -1,9 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
-import { useState, useRef, type KeyboardEvent } from 'react'
+import { useState, useRef, useCallback, useEffect, type KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import { Send, Paperclip, X, FileText, Image, Video, Loader2 } from 'lucide-react'
+import { Send, Paperclip, X, FileText, Image, Video, Loader2, Mic } from 'lucide-react'
 import { MediaPicker } from '@/components/shared/MediaPicker'
-import { VoiceRecorder } from '@/components/chat/VoiceRecorder'
 import { useMediaUpload } from '@/hooks/useMediaUpload'
 import type { SendMessagePayload, ContentType } from '@/types/message'
 
@@ -17,12 +16,57 @@ interface MessageInputProps {
 export function MessageInput({ chatId, onSend, onTyping, onError }: MessageInputProps) {
   const [content, setContent] = useState('')
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [voiceListening, setVoiceListening] = useState(false)
+  const voiceRecognitionRef = useRef<any>(null)
   const [pendingContentType, setPendingContentType] = useState<ContentType | null>(null)
   const { uploading, progress, uploadFile, reset } = useMediaUpload()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const clearPending = () => { setPendingFile(null); setPendingContentType(null); reset() }
   const handleMediaSelect = (file: File, contentType: ContentType) => { setPendingFile(file); setPendingContentType(contentType) }
+
+  const toggleVoiceInput = useCallback(() => {
+    if (voiceRecognitionRef.current) {
+      voiceRecognitionRef.current.stop()
+      voiceRecognitionRef.current = null
+      setVoiceListening(false)
+      return
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      onError?.('Speech recognition not supported')
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'en-US'
+    recognition.interimResults = true
+    recognition.continuous = true
+
+    recognition.onresult = (event: any) => {
+      const result = event.results[event.results.length - 1]
+      if (result) setContent(result[0].transcript)
+    }
+
+    recognition.onerror = () => {
+      voiceRecognitionRef.current = null
+      setVoiceListening(false)
+    }
+
+    recognition.onend = () => {
+      voiceRecognitionRef.current = null
+      setVoiceListening(false)
+    }
+
+    recognition.start()
+    voiceRecognitionRef.current = recognition
+    setVoiceListening(true)
+  }, [onError])
+
+  useEffect(() => {
+    return () => { voiceRecognitionRef.current?.abort() }
+  }, [])
 
   const handleSend = async () => {
     const trimmed = content.trim()
@@ -37,10 +81,6 @@ export function MessageInput({ chatId, onSend, onTyping, onError }: MessageInput
     if (!trimmed) return
     onSend({ chat_id: chatId, content: trimmed, content_type: 'text' })
     setContent(''); inputRef.current?.focus()
-  }
-
-  const handleVoiceSend = (url: string, duration: number) => {
-    onSend({ chat_id: chatId, content: '', content_type: 'voice', media_url: url, media_metadata: { duration } })
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { setContent(e.target.value); onTyping?.() }
@@ -93,19 +133,22 @@ export function MessageInput({ chatId, onSend, onTyping, onError }: MessageInput
           disabled={uploading}
         />
         <div className="flex items-center gap-1 md:gap-2 shrink-0">
-          {!content.trim() && !pendingFile ? (
-            <div className="text-[#8a99a8] hover:text-[#2b3a4a] transition-colors">
-              <VoiceRecorder chatId={chatId} onSend={handleVoiceSend} onError={onError} />
-            </div>
-          ) : (
-            <button
-              onClick={handleSend}
-              disabled={uploading}
-              className="w-9 h-9 md:w-10 md:h-10 rounded-[10px] bg-[#5c7cfa] text-white flex items-center justify-center hover:bg-[#4c6ef5] transition-colors disabled:opacity-50"
-            >
-              {uploading ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Send className="w-4 h-4 md:w-5 md:h-5" />}
-            </button>
-          )}
+          <button
+            onClick={toggleVoiceInput}
+            className={`w-9 h-9 md:w-10 md:h-10 rounded-[10px] flex items-center justify-center transition-colors ${
+              voiceListening ? 'bg-red-500 text-white animate-pulse' : 'text-[#8a99a8] hover:text-[#2b3a4a]'
+            }`}
+            title="Voice input"
+          >
+            <Mic className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={uploading || (!content.trim() && !pendingFile)}
+            className="w-9 h-9 md:w-10 md:h-10 rounded-[10px] bg-[#5c7cfa] text-white flex items-center justify-center hover:bg-[#4c6ef5] transition-colors disabled:opacity-50"
+          >
+            {uploading ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Send className="w-4 h-4 md:w-5 md:h-5" />}
+          </button>
         </div>
       </div>
     </div>

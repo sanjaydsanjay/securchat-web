@@ -13,13 +13,15 @@ interface ProfileModalProps {
 export function ProfileModal({ open, onClose, user }: ProfileModalProps) {
   if (!user) return null
 
+  const isPremium = user.is_premium
+  const isFreeTrial = user.premium_tier === 'free_trial'
+  const planName = user.plan_name || (isPremium ? 'PREMIUM' : user.premium_tier === 'free_trial' ? 'FREE TRIAL' : '')
+
   return (
     <Dialog open={open} onClose={onClose} className="max-w-sm">
       <div className="text-center space-y-5">
-        {/* Avatar */}
         <Avatar src={user.avatar_url} fallback={user.display_name} size="xl" className="mx-auto" />
 
-        {/* Name & ID */}
         <div>
           <h2 className="text-xl font-semibold">{user.display_name}</h2>
           <div className="flex items-center justify-center gap-1 mt-0.5">
@@ -30,14 +32,12 @@ export function ProfileModal({ open, onClose, user }: ProfileModalProps) {
           </div>
         </div>
 
-        {/* Bio */}
         {user.bio && (
           <p className="text-sm text-gray-600 dark:text-gray-400 italic">
             &ldquo;{user.bio}&rdquo;
           </p>
         )}
 
-        {/* Badges */}
         <div className="flex justify-center gap-2 flex-wrap">
           <Badge
             variant={user.is_online ? 'success' : 'secondary'}
@@ -46,10 +46,16 @@ export function ProfileModal({ open, onClose, user }: ProfileModalProps) {
             <span className={`w-2 h-2 rounded-full ${user.is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
             {user.is_online ? 'Online' : 'Offline'}
           </Badge>
-          {user.premium_tier !== 'free' && (
-            <Badge variant="default" className="flex items-center gap-1">
+          {isPremium && (
+            <Badge variant="default" className="flex items-center gap-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">
               <Crown className="w-3 h-3" />
-              {user.premium_tier.charAt(0).toUpperCase() + user.premium_tier.slice(1)}
+              {planName}
+            </Badge>
+          )}
+          {isFreeTrial && !isPremium && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              FREE TRIAL
             </Badge>
           )}
           {user.e2e_enabled && (
@@ -60,7 +66,6 @@ export function ProfileModal({ open, onClose, user }: ProfileModalProps) {
           )}
         </div>
 
-        {/* Details */}
         <div className="text-left space-y-3 text-sm border-t border-gray-100 dark:border-gray-700 pt-4">
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
             <Calendar className="w-4 h-4 shrink-0" />

@@ -65,7 +65,6 @@ export function MobileNav() {
           )
         })}
 
-        {/* Profile */}
         <button
           onClick={() => user ? navigate('/profile') : navigate('/login')}
           className={cn(

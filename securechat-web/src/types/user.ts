@@ -35,6 +35,16 @@ export interface UserProfile {
   ban_expires_at: string | null
   created_at: string
   updated_at: string
+  is_trial_active: boolean
+  trial_start_date: string | null
+  trial_end_date: string | null
+  is_premium: boolean
+  plan_name: string
+  payment_status: string
+  payment_reference: string | null
+  payment_method: string | null
+  payment_date: string | null
+  premium_activated_at: string | null
 }
 
 export interface UserPublicInfo {

@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/authStore'
 import { MediaPicker } from '@/components/shared/MediaPicker'
 import { useMediaUpload } from '@/hooks/useMediaUpload'
 import { userService } from '@/services/userService'
-import { ArrowLeft, Save, Camera, Loader2, ArrowBigLeft } from 'lucide-react'
+import { ArrowLeft, Save, Camera, Loader2, Crown, Clock, Calendar, Shield, CheckCircle } from 'lucide-react'
+import { format, differenceInDays, parseISO } from 'date-fns'
 
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user)
@@ -55,10 +55,15 @@ export function ProfilePage() {
 
   const username = user.email?.split('@')[0] || ''
 
+  const trialStart = user.trial_start_date ? parseISO(user.trial_start_date) : null
+  const trialEnd = user.trial_end_date ? parseISO(user.trial_end_date) : null
+  const daysRemaining = trialEnd ? Math.max(0, differenceInDays(trialEnd, new Date())) : 0
+  const isTrialActive = user.is_trial_active && daysRemaining > 0
+  const isPremium = user.is_premium
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-lg mx-auto p-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
@@ -66,7 +71,6 @@ export function ProfilePage() {
           <h1 className="text-lg font-semibold">Profile</h1>
         </div>
 
-        {/* Avatar & Basic Info */}
         <div className="text-center">
           <div className="relative inline-block">
             <Avatar
@@ -87,9 +91,23 @@ export function ProfilePage() {
           {avatarFile && (
             <p className="text-xs text-green-600 mt-1">New photo selected</p>
           )}
+          <div className="mt-2">
+            {isPremium ? (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full text-xs font-medium">
+                <Crown className="w-3 h-3" /> PREMIUM
+              </span>
+            ) : isTrialActive ? (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs font-medium">
+                <Clock className="w-3 h-3" /> FREE TRIAL
+              </span>
+            ) : user.plan_name === 'TRIAL EXPIRED' ? (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full text-xs font-medium">
+                TRIAL EXPIRED
+              </span>
+            ) : null}
+          </div>
         </div>
 
-        {/* Profile Details */}
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
           <DetailRow label="Display Name" value={user.display_name} />
           <DetailRow label="Unique ID" value={user.unique_id.toString()} />
@@ -103,12 +121,57 @@ export function ProfilePage() {
           />
           <DetailRow
             label="Member Since"
-            value={new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            value={format(new Date(user.created_at), 'dd MMM yyyy')}
           />
-          <DetailRow label="Plan" value={user.premium_tier} />
+
+          <div className="px-4 py-3">
+            <span className="text-sm text-gray-500">Current Plan</span>
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {isPremium ? 'PREMIUM' : isTrialActive ? 'FREE TRIAL' : user.plan_name}
+                </span>
+                {isPremium ? (
+                  <Shield className="w-4 h-4 text-yellow-500" />
+                ) : isTrialActive ? (
+                  <Clock className="w-4 h-4 text-gray-400" />
+                ) : null}
+              </div>
+
+              {trialStart && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Trial Start</span>
+                  <span>{format(trialStart, 'dd MMM yyyy')}</span>
+                </div>
+              )}
+
+              {trialEnd && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Trial End</span>
+                  <span>{format(trialEnd, 'dd MMM yyyy')}</span>
+                </div>
+              )}
+
+              {isTrialActive && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Days Remaining</span>
+                  <span className="font-medium text-green-600">{daysRemaining}</span>
+                </div>
+              )}
+
+              {isPremium && user.premium_activated_at && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Premium Activated</span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3 text-green-500" />
+                    {format(new Date(user.premium_activated_at), 'dd MMM yyyy')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Edit Form */}
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium mb-1 block">Display Name</label>

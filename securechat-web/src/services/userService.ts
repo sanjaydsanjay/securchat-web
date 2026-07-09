@@ -17,25 +17,19 @@ export const userService = {
 
   async getUserByUniqueId(uniqueId: number): Promise<{ data: UserPublicInfo | null; error: unknown }> {
     try {
-      console.log('[userService] Searching for unique_id:', uniqueId)
       const { data, error } = await supabase
         .from('users')
-        .select('unique_id, display_name, avatar_url, bio, is_online, last_seen, premium_tier, e2e_enabled, created_at')
+        .select('unique_id, display_name, avatar_url, bio, is_online, last_seen, premium_tier, is_premium, plan_name, e2e_enabled, created_at')
         .eq('unique_id', uniqueId)
         .neq('is_banned', true)
         .maybeSingle()
 
-      console.log('[userService] Query result:', { data, error })
-
       if (error) {
-        console.error('[userService] Query error:', error)
         return { data: null, error: 'Unable to search user. Please try again.' }
       }
 
-      console.log('[userService] User found:', data?.display_name || 'none')
       return { data: data as UserPublicInfo | null, error: null }
     } catch (err) {
-      console.error('[userService] Unexpected error in getUserByUniqueId:', err)
       return { data: null, error: 'Unable to search user. Please try again.' }
     }
   },
@@ -43,7 +37,7 @@ export const userService = {
   async searchUsers(query: string): Promise<{ data: UserPublicInfo[] | null; error: unknown }> {
     const { data, error } = await supabase
       .from('users')
-      .select('unique_id, display_name, avatar_url, bio, is_online, last_seen, premium_tier, e2e_enabled, created_at')
+      .select('unique_id, display_name, avatar_url, bio, is_online, last_seen, premium_tier, is_premium, plan_name, e2e_enabled, created_at')
       .ilike('display_name', `%${query}%`)
       .limit(20)
     return { data: data as UserPublicInfo[] | null, error }

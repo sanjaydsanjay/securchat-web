@@ -20,6 +20,7 @@ export interface Chat {
   unread_count_2: number
   is_e2e_enabled: boolean
   e2e_shared_secret: string | null
+  deleted_for: number[]
   created_at: string
   updated_at: string
   other_user?: import('./user').UserPublicInfo

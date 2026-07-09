@@ -79,8 +79,6 @@ export const authService = {
   },
 
   async getProfile(userId: string, retries = 5): Promise<{ data: UserProfile | null; error: unknown }> {
-    // Retry loop: the trigger that creates the profile runs async
-    // so the profile may not exist immediately after signup.
     for (let attempt = 0; attempt < retries; attempt++) {
       const { data, error } = await supabase
         .from('users')

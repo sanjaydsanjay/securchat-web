@@ -18,11 +18,12 @@ export const QUOTA_WARNING_80 = 0.8
 export const QUOTA_WARNING_90 = 0.9
 export const QUOTA_WARNING_95 = 0.95
 
+export const TRIAL_DAYS = 10
+
 export const PREMIUM_PLANS = {
-  basic: { name: 'Basic', price: 50, messages: 2500, fileSize: 10, devices: 2 },
-  standard: { name: 'Standard', price: 100, messages: 5000, fileSize: 25, devices: 3 },
-  premium: { name: 'Premium', price: 150, messages: 10000, fileSize: 50, devices: 5 },
-  enterprise: { name: 'Enterprise', price: 500, messages: -1, fileSize: 100, devices: -1 },
+  basic: { name: 'Premium Basic', price: 150, days: 25, messages: 2500, fileSize: 10, devices: 2 },
+  standard: { name: 'Premium Standard', price: 200, days: 45, messages: 5000, fileSize: 25, devices: 3 },
+  pro: { name: 'Premium Pro', price: 260, days: 60, messages: 10000, fileSize: 50, devices: 5 },
 } as const
 
 export const AI_MODELS = {
@@ -77,3 +78,9 @@ export const KEYBOARD_SHORTCUTS = [
   { keys: 'Escape', action: 'Close modal / Deselect chat' },
   { keys: 'Ctrl/Cmd + /', action: 'Show shortcuts help' },
 ] as const
+
+export const DEV_INFO = {
+  upi_id: 'developer@upi',
+  phonepay: '9876543210@ybl',
+  qr_text: 'UPI: developer@upi',
+} as const

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabaseConfig'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
+import { paymentService } from '@/services/paymentService'
 import type { UserProfile } from '@/types/user'
 
 export function useAuth() {
@@ -21,6 +22,27 @@ export function useAuth() {
     }
   }, [setUser])
 
+  const checkTrialStatus = useCallback(async () => {
+    try {
+      const { data } = await paymentService.checkTrial()
+      if (data && data.length > 0) {
+        const result = data[0]
+        if (!result.is_trial_active) {
+          const current = useAuthStore.getState().user
+          if (current) {
+            setUser({
+              ...current,
+              is_trial_active: false,
+              plan_name: result.plan_name || 'TRIAL EXPIRED',
+            })
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Trial check failed:', err)
+    }
+  }, [setUser])
+
   useEffect(() => {
     let mounted = true
 
@@ -33,6 +55,7 @@ export function useAuth() {
         if (currentSession?.user) {
           setSession(currentSession)
           await syncProfile(currentSession.user.id)
+          await checkTrialStatus()
         }
       } catch (err) {
         console.error('Auth init failed:', err)
@@ -57,6 +80,7 @@ export function useAuth() {
           case 'TOKEN_REFRESHED':
             if (currentSession?.user) {
               await syncProfile(currentSession.user.id)
+              await checkTrialStatus()
             }
             break
 
@@ -67,6 +91,7 @@ export function useAuth() {
           case 'USER_UPDATED':
             if (currentSession?.user) {
               await syncProfile(currentSession.user.id)
+              await checkTrialStatus()
             }
             break
         }
@@ -77,7 +102,7 @@ export function useAuth() {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [syncProfile, setSession, setLoading, setInitialized, reset])
+  }, [syncProfile, checkTrialStatus, setSession, setLoading, setInitialized, reset])
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
     const { data, error } = await authService.signUp(email, password, displayName)

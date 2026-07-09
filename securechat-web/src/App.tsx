@@ -72,7 +72,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  const { loading } = useAuthStore()
+  const { user, loading } = useAuthStore()
   const location = useLocation()
   const navigate = useNavigate()
 

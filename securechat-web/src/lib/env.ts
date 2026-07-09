@@ -20,7 +20,7 @@ export const env = {
   APP_NAME: import.meta.env.VITE_APP_NAME || 'SecureChat AI',
   APP_URL: import.meta.env.VITE_APP_URL || 'http://localhost:5179',
   VAPID_PUBLIC_KEY: import.meta.env.VITE_VAPID_PUBLIC_KEY as string,
-  RAZORPAY_KEY_ID: import.meta.env.VITE_RAZORPAY_KEY_ID || '',
+  RAZORPAY_KEY_ID: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
   SOCKET_URL: import.meta.env.VITE_SOCKET_URL || '',
   OPENROUTER_ENABLED: import.meta.env.VITE_OPENROUTER_ENABLED === 'true',
   ENABLE_E2E: import.meta.env.VITE_ENABLE_E2E === 'true',

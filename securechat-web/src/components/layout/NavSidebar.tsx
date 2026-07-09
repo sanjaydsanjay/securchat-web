@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
-import { Home, MessageSquare, Star, TrendingUp, Settings, User } from 'lucide-react'
+import { Home, MessageSquare, Star, TrendingUp, Settings, User, Crown, Clock } from 'lucide-react'
+import { format, differenceInDays, parseISO } from 'date-fns'
 
 const navItems = [
   { id: 'home', icon: Home, path: '/', label: 'Home' },
@@ -52,8 +53,13 @@ export function NavSidebar() {
     navigate(path)
   }
 
+  const trialEnd = user?.trial_end_date ? parseISO(user.trial_end_date) : null
+  const daysRemaining = trialEnd ? Math.max(0, differenceInDays(trialEnd, new Date())) : 0
+  const isTrialActive = user?.is_trial_active && daysRemaining > 0
+  const isPremium = user?.is_premium
+
   return (
-    <nav className="hidden md:flex w-[80px] flex-col bg-[#132238] shrink-0 h-full py-8 items-center justify-between z-20">
+    <nav className="hidden md:flex w-[80px] flex-col bg-[#132238] shrink-0 h-full py-8 items-center justify-between z-20 rounded-[16px]">
       <div className="flex flex-col gap-[35px] w-full items-center">
         {navItems.map((item) => {
           const active = isActive(item.path) && item.id !== 'home'
@@ -85,17 +91,29 @@ export function NavSidebar() {
         })}
       </div>
 
-      <button
-        onClick={() => user ? navigate('/profile') : navigate('/login')}
-        className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-        title="Profile"
-      >
-        {user?.avatar_url ? (
-          <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-        ) : (
-          <User className="w-5 h-5" />
+      <div className="flex flex-col items-center gap-2">
+        {isPremium && (
+          <span className="text-[10px] text-yellow-400 font-medium flex items-center gap-1">
+            <Crown className="w-3 h-3" /> PREMIUM
+          </span>
         )}
-      </button>
+        {isTrialActive && !isPremium && (
+          <span className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
+            <Clock className="w-3 h-3" /> {daysRemaining}d
+          </span>
+        )}
+        <button
+          onClick={() => user ? navigate('/profile') : navigate('/login')}
+          className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors relative"
+          title="Profile"
+        >
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+          ) : (
+            <User className="w-5 h-5" />
+          )}
+        </button>
+      </div>
     </nav>
   )
 }

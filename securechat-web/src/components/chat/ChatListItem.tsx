@@ -3,11 +3,11 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useChatStore } from '@/stores/chatStore'
 import { formatChatTime } from '@/utils/formatTime'
-import { Check, CheckCheck, Clock, AlertCircle } from 'lucide-react'
+import { Check, CheckCheck, Clock, AlertCircle, Trash2 } from 'lucide-react'
 import type { Chat } from '@/types/chat'
 import type { MessageStatus } from '@/types/message'
 
-interface ChatListItemProps { chat: Chat; active: boolean; onClick: () => void }
+interface ChatListItemProps { chat: Chat; active: boolean; onClick: () => void; onDelete?: () => void }
 
 function getLastMessageStatus(chatId: string, currentUserId: number): MessageStatus | null {
   const messages = useChatStore.getState().messages[chatId]
@@ -17,7 +17,7 @@ function getLastMessageStatus(chatId: string, currentUserId: number): MessageSta
   return lastMsg.status || 'sent'
 }
 
-export const ChatListItem = memo(function ChatListItem({ chat, active, onClick }: ChatListItemProps) {
+export const ChatListItem = memo(function ChatListItem({ chat, active, onClick, onDelete }: ChatListItemProps) {
   const user = useAuthStore((s) => s.user)
   const onlineUserIds = useChatStore((s) => s.onlineUserIds)
   const isOnline = onlineUserIds.includes(chat.other_user?.unique_id ?? -1)
@@ -43,22 +43,32 @@ export const ChatListItem = memo(function ChatListItem({ chat, active, onClick }
   }
 
   return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'w-full flex gap-3 p-4 rounded-[16px] transition-colors text-left',
-        active ? 'bg-[#5c7cfa] text-white' : 'bg-[#f1f3f9] hover:bg-[#e8ebf3]'
-      )}
-    >
-      <div className="relative shrink-0">
-        <div className="w-[42px] h-[42px] rounded-full bg-[#cbd5e1] flex items-center justify-center text-[#64748b] text-sm font-medium">
-          {chat.other_user?.display_name?.charAt(0)?.toUpperCase() || 'U'}
-        </div>
-        {isOnline && (
-          <span className="absolute bottom-0 right-0 w-[10px] h-[10px] bg-[#3cd180] border-2 border-white rounded-full" />
+    <div className={cn('relative group', active ? '' : '')}>
+      <button
+        onClick={onClick}
+        className={cn(
+          'w-full flex gap-3 p-4 rounded-[16px] transition-colors text-left',
+          active ? 'bg-[#5c7cfa] text-white' : 'bg-[#f1f3f9] hover:bg-[#e8ebf3]'
         )}
-      </div>
-      <div className="flex-1 min-w-0">
+      >
+        <div className="relative shrink-0">
+          <div className="w-[42px] h-[42px] rounded-full bg-[#cbd5e1] flex items-center justify-center text-[#64748b] text-sm font-medium">
+            {chat.other_user?.display_name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+          {isOnline && (
+            <span className="absolute bottom-0 right-0 w-[10px] h-[10px] bg-[#3cd180] border-2 border-white rounded-full" />
+          )}
+        </div>
+        {onDelete && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/80 hover:bg-red-50 text-[#8a99a8] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm"
+            title="Delete chat"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center mb-[4px]">
           <span className={cn('font-semibold text-[14px] truncate', active ? 'text-white' : 'text-[#2b3a4a]')}>
             {chat.other_user?.display_name || `User ${chat.participant_2_id}`}
@@ -89,5 +99,6 @@ export const ChatListItem = memo(function ChatListItem({ chat, active, onClick }
         </div>
       </div>
     </button>
+    </div>
   )
 })

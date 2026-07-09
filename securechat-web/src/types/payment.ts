@@ -1,12 +1,13 @@
-export type PaymentPlan = 'basic' | 'standard' | 'premium' | 'enterprise'
-export type PaymentStatus = 'pending' | 'verified' | 'failed' | 'refunded'
-export type PaymentMethod = 'upi' | 'razorpay' | 'card' | 'netbanking'
+export type PaymentPlan = 'basic' | 'standard' | 'pro'
+export type PaymentStatus = 'pending' | 'verified' | 'rejected' | 'failed'
+export type PaymentMethod = 'razorpay' | 'upi' | 'phonepay'
 
 export interface PremiumPlan {
   id: PaymentPlan
   name: string
   price: number
   currency: string
+  days: number
   messages_per_month: number
   max_file_size_mb: number
   features: string[]
@@ -15,27 +16,24 @@ export interface PremiumPlan {
 
 export interface Payment {
   id: string
-  user_unique_id: number
-  plan: PaymentPlan
+  user_id: string
   amount: number
-  currency: string
-  status: PaymentStatus
-  payment_method: PaymentMethod | null
-  screenshot_url: string | null
+  plan_name: string
+  payment_method: PaymentMethod
   transaction_id: string | null
-  razorpay_order_id: string | null
   razorpay_payment_id: string | null
-  razorpay_signature: string | null
-  verified_by: string | null
-  verified_at: string | null
-  refund_reason: string | null
-  refund_amount: number | null
+  razorpay_order_id: string | null
+  screenshot_url: string | null
+  status: PaymentStatus
   created_at: string
-  updated_at: string
 }
 
 export interface CreatePaymentPayload {
-  plan: PaymentPlan
-  payment_method?: PaymentMethod
+  plan_name: string
+  amount: number
+  payment_method: PaymentMethod
+  transaction_id?: string
   screenshot_url?: string
+  razorpay_payment_id?: string
+  razorpay_order_id?: string
 }

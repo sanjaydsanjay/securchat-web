@@ -1,9 +1,9 @@
-import { memo, useState } from 'react'
+import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserStore } from '@/stores/userStore'
 import { MessageReactionsDisplay } from './MessageReactions'
 import { ReactionPicker } from './ReactionPicker'
-import { Check, CheckCheck, Clock, AlertCircle, Lock } from 'lucide-react'
+import { Check, CheckCheck, Clock, AlertCircle, Lock, Pencil, Trash2, Ban } from 'lucide-react'
 import type { Message } from '@/types/message'
 import type { Chat } from '@/types/chat'
 
@@ -22,7 +22,35 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
   const isOwn = message.sender_unique_id === user?.unique_id
   const [showActions, setShowActions] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const contextRef = useRef<HTMLDivElement>(null)
   const isStarred = starredMessages.includes(message.id)
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const close = (e: MouseEvent | TouchEvent) => {
+      if (contextRef.current && !contextRef.current.contains(e.target as Node)) {
+        setContextMenu(null)
+      }
+    }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('touchstart', close)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('touchstart', close)
+    }
+  }, [contextMenu])
+
+  const handleContextMenu = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if ('touches' in e) {
+      const touch = e.touches[0]
+      setContextMenu({ x: touch.clientX, y: touch.clientY })
+    } else {
+      setContextMenu({ x: e.clientX, y: e.clientY })
+    }
+  }, [])
 
   if (message.deleted_for?.includes(user?.unique_id ?? -1)) return null
 
@@ -69,16 +97,58 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
     return <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
   }
 
+  const renderContextMenu = () => {
+    if (!contextMenu) return null
+    return (
+      <div
+        ref={contextRef}
+        className="fixed z-[100] min-w-[180px] rounded-lg border border-gray-200 bg-white p-1 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+        style={{ left: contextMenu.x, top: contextMenu.y }}
+      >
+        {isOwn && (
+          <>
+            <button
+              onClick={() => { onEdit?.(message.content); setContextMenu(null) }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <Pencil className="w-4 h-4" /> Edit
+            </button>
+            <button
+              onClick={() => { onDelete?.(false); setContextMenu(null) }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="w-4 h-4" /> Delete for me
+            </button>
+            <button
+              onClick={() => { onDelete?.(true); setContextMenu(null) }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              <Ban className="w-4 h-4" /> Delete for everyone
+            </button>
+          </>
+        )}
+        <button
+          onClick={() => { onStar?.(); setContextMenu(null) }}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+        >
+          {isStarred ? '★' : '☆'} {isStarred ? 'Unstar' : 'Star'}
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div className={`flex mb-1.5 group ${isOwn ? 'justify-end' : 'justify-start'}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <div className={`relative max-w-[75%] md:max-w-[65%] px-[18px] py-[14px] text-[13.5px] leading-relaxed ${
-        isOwn
-          ? 'bg-[#5c7cfa] text-white rounded-[18px] rounded-tr-[4px]'
-          : 'bg-white text-[#2b3a4a] rounded-[18px] rounded-tl-[4px]'
-      }`}>
+    <div className={`flex mb-1.5 group ${isOwn ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className={`relative max-w-[75%] md:max-w-[65%] px-[18px] py-[14px] text-[13.5px] leading-relaxed ${
+          isOwn
+            ? 'bg-[#5c7cfa] text-white rounded-[18px] rounded-tr-[4px]'
+            : 'bg-white text-[#2b3a4a] rounded-[18px] rounded-tl-[4px]'
+        }`}
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => { setShowActions(false); setContextMenu(null) }}
+        onContextMenu={handleContextMenu}
+      >
         {message.reply_to_id && message.reply_to && (
           <div className={`mb-2 pl-2.5 border-l-2 rounded-sm ${isOwn ? 'border-white/40' : 'border-gray-300'}`}>
             <p className={`text-[11px] font-medium ${isOwn ? 'text-white/80' : 'text-[#8a99a8]'}`}>
@@ -111,7 +181,7 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
         {showReactionPicker && (
           <div className="absolute -top-10 left-0 z-50"><ReactionPicker onReact={(emoji) => onReact?.(emoji)} onClose={() => setShowReactionPicker(false)} /></div>
         )}
-        {showActions && (
+        {showActions && !contextMenu && (
           <div className={`absolute -top-8 flex gap-0.5 bg-white rounded-[16px] shadow-lg border border-gray-100 px-2 py-1 ${isOwn ? 'right-0' : 'left-0'}`}>
             <button onClick={() => setShowReactionPicker(true)} className="p-0.5 hover:bg-gray-100 rounded-[8px] text-xs">😊</button>
             <button onClick={() => onStar?.()} className={`p-0.5 hover:bg-gray-100 rounded-[8px] text-xs ${isStarred ? 'text-yellow-500' : ''}`}>{isStarred ? '★' : '☆'}</button>
@@ -125,6 +195,7 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
           </div>
         )}
       </div>
+      {renderContextMenu()}
     </div>
   )
 })

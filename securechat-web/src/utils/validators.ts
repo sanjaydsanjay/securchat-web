@@ -36,5 +36,5 @@ export const reportSchema = z.object({
 })
 
 export const paymentSchema = z.object({
-  plan: z.enum(['basic', 'standard', 'premium', 'enterprise']),
+  plan: z.enum(['premium_basic', 'premium_standard', 'premium_pro']),
 })
