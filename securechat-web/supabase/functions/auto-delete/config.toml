@@ -1,0 +1,2 @@
+[functions.auto-delete]
+verify_jwt = false

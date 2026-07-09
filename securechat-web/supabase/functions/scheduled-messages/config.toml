@@ -1,0 +1,2 @@
+[functions.scheduled-messages]
+verify_jwt = false

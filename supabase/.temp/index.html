@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application Dashboard</title>
+    <!-- FontAwesome for matching icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-canvas: #e2e4e6;
+            --bg-app: #ffffff;
+            --bg-sidebar: #132238;
+            --bg-panel: #f1f3f9;
+            --bg-card-hover: #e8ebf3;
+            --primary-accent: #5c7cfa;
+            --text-dark: #2b3a4a;
+            --text-muted: #8a99a8;
+            --status-green: #3cd180;
+            --gap-size: 30px; /* Requested 30px gap between layout boxes */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Main Application Container Wrapper */
+        .app-container {
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            background-color: var(--bg-app);
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            display: flex;
+            padding: var(--gap-size); /* Enforces the 30px gap spacing inner border */
+            gap: var(--gap-size);     /* Sets exactly 30px gap between main components */
+        }
+
+        /* 1. Left Sidebar Navigation Panel */
+        .sidebar {
+            width: 80px;
+            background-color: var(--bg-sidebar);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 30px 0;
+            flex-shrink: 0;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .nav-item {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: #ffffff;
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-accent);
+        }
+
+        .nav-item .badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background-color: #ff5b5b;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .user-avatar-profile {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* 2. Middle Column: Message List View */
+        .message-list-panel {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .search-bar-container {
+            position: relative;
+        }
+
+        .search-bar-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            background-color: #fafbfe;
+            font-size: 14px;
+            outline: none;
+            color: var(--text-dark);
+        }
+
+        .chat-cards-scroll {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 4px;
+        }
+
+        /* Chat Card Styles directly mimicking Screenshot 2026-07-05 194509.png */
+        .chat-card {
+            background-color: var(--bg-panel);
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            position: relative;
+        }
+
+        .chat-card:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        .chat-card.active {
+            background-color: var(--primary-accent);
+            color: white;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .avatar-placeholder {
+            width: 42px;
+            height: 42px;
+            background-color: #cbd5e1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+        }
+
+        .chat-card.active .avatar-placeholder {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--status-green);
+            border: 2px solid var(--bg-app);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .card-content {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .card-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .card-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .chat-card.active .card-time {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .card-preview {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-card.active .card-preview {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .card-status-meta {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .unread-badge {
+            background-color: var(--status-green);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .status-checkmarks {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .chat-card.active .status-checkmarks {
+            color: white;
+        }
+
+        /* 3. Right Column: Conversation Main Frame View */
+        .chat-window {
+            flex-grow: 1;
+            background-color: var(--bg-panel);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 20px var(--gap-size);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: transparent;
+        }
+
+        .header-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-username {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 16px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 20px;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Message Stream Body Area */
+        .chat-messages-stream {
+            flex-grow: 1;
+            padding: 0 var(--gap-size) var(--gap-size) var(--gap-size);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .msg-row {
+            display: flex;
+            gap: 12px;
+            max-width: 75%;
+        }
+
+        .msg-row.incoming {
+            align-self: flex-start;
+        }
+
+        .msg-row.outgoing {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .msg-bubble {
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 13.5px;
+            line-height: 1.45;
+            position: relative;
+        }
+
+        .incoming .msg-bubble {
+            background-color: #ffffff;
+            color: var(--text-dark);
+            border-top-left-radius: 4px;
+        }
+
+        .outgoing .msg-bubble {
+            background-color: var(--primary-accent);
+            color: #ffffff;
+            border-top-right-radius: 4px;
+        }
+
+        .msg-timestamp {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .outgoing .msg-timestamp {
+            justify-content: flex-end;
+        }
+
+        /* Footer Input Panel Area */
+        .chat-footer-input-panel {
+            padding: 20px var(--gap-size);
+            background-color: transparent;
+        }
+
+        .input-wrapper-container {
+            background-color: #ffffff;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            padding: 6px 8px 6px 20px;
+        }
+
+        .message-entry-field {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .message-entry-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        .send-btn-action {
+            background-color: var(--primary-accent);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .send-btn-action:hover {
+            background-color: #4c6ef5;
+        }
+
+        /* Scrollbar aesthetics customization styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.08);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,0,0,0.15);
+        }
+
+        /* Adaptive Mobile Breakdown Rulesets */
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .message-list-panel { display: none; }
+            .app-container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- 1. LEFT SIDEBAR PANEL -->
+        <aside class="sidebar">
+            <div class="nav-links">
+                <div class="nav-item"><i class="fa-solid fa-house"></i></div>
+                <div class="nav-item active">
+                    <i class="fa-solid fa-comment-dots"></i>
+                </div>
+                <div class="nav-item"><i class="fa-solid fa-star"></i></div>
+                <div class="nav-item">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    <span class="badge"></span>
+                </div>
+                <div class="nav-item"><i class="fa-solid fa-gear"></i></div>
+            </div>
+            <div class="user-avatar-profile">
+                <i class="fa-solid fa-user"></i>
+            </div>
+        </aside>
+
+        <!-- 2. MIDDLE MESSAGE LIST PANEL -->
+        <section class="message-list-panel">
+            <div class="search-bar-container">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" class="search-input" placeholder="Search">
+            </div>
+
+            <div class="chat-cards-scroll">
+                <!-- Card 1 -->
+                <div class="chat-card">
+                    <div class="avatar-wrapper">
+                        <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-name">User Name</span>
+                            <span class="card-time">01.01.22</span>
+                        </div>
+                        <p class="card-preview">Lorem ipsum dolor sit amet, consectetur adipiscing elit,</p>
+                    </div>
+                </div>
+
+                <!-- Card 2 (Active State variant) -->
+                <div class="chat-card active">
+                    <div class="avatar-wrapper">
+                        <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                        <span class="online-dot"></span>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-name">User Name</span>
+                            <span class="card-time">01.01.22</span>
+                        </div>
+                        <p class="card-preview">Lorem ipsum dolor sit amet, consectetur adipiscing elit,</p>
+                        <div class="card-status-meta">
+                            <span class="status-checkmarks"><i class="fa-solid fa-check-double"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 (Unread Badge state variant) -->
+                <div class="chat-card">
+                    <div class="avatar-wrapper">
+                        <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-name">User Name</span>
+                            <span class="card-time">01.01.22</span>
+                        </div>
+                        <p class="card-preview">Lorem ipsum dolor sit amet, consectetur adipiscing elit,</p>
+                        <div class="card-status-meta">
+                            <span class="unread-badge">3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="chat-card">
+                    <div class="avatar-wrapper">
+                        <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                        <span class="online-dot"></span>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-name">User Name</span>
+                            <span class="card-time">01.01.22</span>
+                        </div>
+                        <p class="card-preview">Lorem ipsum dolor sit amet, consectetur adipiscing elit,</p>
+                        <div class="card-status-meta">
+                            <span class="unread-badge">1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="chat-card">
+                    <div class="avatar-wrapper">
+                        <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <span class="card-name">User Name</span>
+                            <span class="card-time">01.01.22</span>
+                        </div>
+                        <p class="card-preview">Lorem ipsum dolor sit amet, consectetur adipiscing elit,</p>
+                        <div class="card-status-meta">
+                            <span class="status-checkmarks"><i class="fa-solid fa-check-double"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. RIGHT CONVERSATION MAIN PANEL VIEW -->
+        <main class="chat-window">
+            <header class="chat-header">
+                <div class="header-user-info">
+                    <div class="avatar-placeholder"><i class="fa-solid fa-user"></i></div>
+                    <span class="header-username">User Name</span>
+                </div>
+                <div class="header-actions">
+                    <i class="fa-regular fa-window-maximize"></i>
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <i class="fa-solid fa-bars"></i>
+                </div>
+            </header>
+
+            <div class="chat-messages-stream">
+                <!-- Outgoing Message -->
+                <div class="msg-row outgoing">
+                    <div>
+                        <div class="msg-bubble">
+                            Lorem ipsum dolor sit amet
+                        </div>
+                        <div class="msg-timestamp">
+                            22:01 <i class="fa-solid fa-check-double"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outgoing Message Blue Block Long text -->
+                <div class="msg-row outgoing">
+                    <div>
+                        <div class="msg-bubble">
+                            Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
+                        </div>
+                        <div class="msg-timestamp">
+                            22:02 <i class="fa-solid fa-check-double"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incoming Message -->
+                <div class="msg-row incoming">
+                    <div class="avatar-placeholder" style="width:32px; height:32px;"><i class="fa-solid fa-user" style="font-size:11px;"></i></div>
+                    <div>
+                        <div class="msg-bubble">
+                            Lorem ipsum dolor sit amet, consectetuer.
+                        </div>
+                        <div class="msg-timestamp">22:11</div>
+                    </div>
+                </div>
+
+                <!-- Incoming Message White Block Long text -->
+                <div class="msg-row incoming">
+                    <div class="avatar-placeholder" style="width:32px; height:32px;"><i class="fa-solid fa-user" style="font-size:11px;"></i></div>
+                    <div>
+                        <div class="msg-bubble">
+                            Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat.
+                        </div>
+                        <div class="msg-timestamp">22:12</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Message Write Form Field Input Panel -->
+            <footer class="chat-footer-input-panel">
+                <div class="input-wrapper-container">
+                    <input type="text" class="message-entry-field" placeholder="Message....">
+                    <button class="send-btn-action">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                </div>
+            </footer>
+        </main>
+
+    </div>
+
+</body>
+</html>

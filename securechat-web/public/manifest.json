@@ -1,0 +1,26 @@
+{
+  "name": "SecureChat AI - Anonymous Secure Messaging",
+  "short_name": "SecureChat",
+  "description": "Anonymous real-time communication platform with end-to-end encryption and AI-powered threat detection",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#128C7E",
+  "categories": ["social", "communication", "security"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Chat",
+      "short_name": "New Chat",
+      "description": "Start a new conversation",
+      "url": "/?new-chat=true"
+    }
+  ]
+}

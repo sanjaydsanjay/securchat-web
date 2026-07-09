@@ -1,0 +1,2 @@
+import { createSupabaseAdmin } from './supabase.ts';
+export const verifyAuth = async (req: Request) => { const authHeader = req.headers.get('Authorization'); if (!authHeader) throw new Error('No authorization header'); const token = authHeader.replace('Bearer ', ''); const supabase = createSupabaseAdmin(); const { data: { user }, error } = await supabase.auth.getUser(token); if (error || !user) throw new Error('Invalid token'); return user; };
