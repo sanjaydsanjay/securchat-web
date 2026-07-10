@@ -1,4 +1,4 @@
-export type PremiumTier = 'free' | 'basic' | 'standard' | 'premium' | 'enterprise'
+export type PremiumTier = 'free' | 'basic' | 'standard' | 'premium' | 'enterprise' | 'free_trial' | 'trial_expired' | 'pro'
 export type OnlineStatus = 'online' | 'recently' | 'away' | 'offline'
 export type LastSeenVisibility = 'everyone' | 'contacts' | 'nobody'
 export type ThemePreference = 'light' | 'dark' | 'midnight' | 'forest' | 'system'
@@ -55,8 +55,20 @@ export interface UserPublicInfo {
   is_online: boolean
   last_seen: string
   premium_tier: PremiumTier
+  is_premium: boolean
+  plan_name: string | null
   e2e_enabled: boolean
   created_at: string
+}
+
+export interface TrialInfo {
+  is_trial_active: boolean
+  trial_start_date: string | null
+  trial_end_date: string | null
+  plan_name: string | null
+  days_remaining: number
+  is_premium: boolean
+  premium_tier: PremiumTier
 }
 
 export interface UserSettings {

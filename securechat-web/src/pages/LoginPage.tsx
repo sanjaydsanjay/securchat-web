@@ -46,11 +46,14 @@ export function LoginPage() {
     setLoading(true)
 
     if (isSignUp) {
-      const { error: signUpError } = await signUp(email, password, displayName)
+      const { data: signUpData, error: signUpError } = await signUp(email, password, displayName)
       setLoading(false)
 
       if (signUpError) {
         setError(typeof signUpError === 'string' ? signUpError : signUpError.message)
+      } else if (signUpData?.session) {
+        // Email confirmation is disabled: the user is signed in immediately.
+        // The auth state (ProtectedRoute) will redirect to the chat automatically.
       } else {
         setVerificationSent(true)
       }
@@ -202,7 +205,7 @@ export function LoginPage() {
                 onClick={() => navigate('/forgot-password')}
                 className="text-xs text-[#128C7E] hover:underline block ml-auto"
               >
-                Forgot password?
+              
               </button>
             )}
 

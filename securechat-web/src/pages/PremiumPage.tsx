@@ -162,6 +162,7 @@ export function PremiumPage() {
           })}
         </div>
       )}
+      
 
       {step === 'payment' && selectedPlanData && (
         <div className="max-w-md mx-auto space-y-4">

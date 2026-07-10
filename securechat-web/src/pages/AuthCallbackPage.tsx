@@ -15,9 +15,10 @@ export function AuthCallbackPage() {
 
       // Supabase sends tokens in URL hash for PKCE flow
       if (hash && hash.includes('access_token')) {
+        const hashParams = new URLSearchParams(hash.slice(1))
         const { error } = await supabase.auth.setSession({
-          access_token: new URLSearchParams(hash.slice(1)).get('access_token') || '',
-          refresh_token: new URLSearchParams(hash.slice(1)).get('refresh_token') || '',
+          access_token: hashParams.get('access_token') || '',
+          refresh_token: hashParams.get('refresh_token') || '',
         })
         if (error) {
           setStatus('error')
@@ -25,8 +26,15 @@ export function AuthCallbackPage() {
           return
         }
         setStatus('success')
-        setMessage('Email verified successfully! Redirecting...')
-        setTimeout(() => navigate('/', { replace: true }), 1500)
+        
+        const type = hashParams.get('type')
+        if (type === 'recovery') {
+          setMessage('Password reset verified! Redirecting...')
+          setTimeout(() => navigate('/reset-password', { replace: true }), 1500)
+        } else {
+          setMessage('Email verified successfully! Redirecting...')
+          setTimeout(() => navigate('/', { replace: true }), 1500)
+        }
         return
       }
 

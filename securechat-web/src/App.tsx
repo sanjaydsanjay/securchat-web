@@ -20,6 +20,7 @@ const BlockedPage = lazy(() => import('@/pages/BlockedPage'))
 const BannedAccountPage = lazy(() => import('@/pages/BannedAccountPage'))
 const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const IntroPage = lazy(() => import('@/pages/IntroPage'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,7 +44,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/intro" replace />
   }
 
   if (user.is_banned) {
@@ -95,6 +96,7 @@ function AppRoutes() {
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950"><Loader size="lg" /></div>}>
       <Routes>
         {/* Public routes */}
+        <Route path="/intro" element={<IntroPage />} />
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />

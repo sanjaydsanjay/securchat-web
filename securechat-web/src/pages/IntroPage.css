@@ -1,0 +1,448 @@
+/* --- CSS Reset & Variables --- */
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --bg-light: #f8fafc;
+    --text-dark: #0f172a;
+    --text-muted: #64748b;
+    --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.intro-page-container {
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- Animations --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mobile-splash {
+    display: none;
+    min-height: 100vh;
+    background-color: var(--bg-light);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.mobile-splash-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 400px;
+    z-index: 10;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.mobile-splash .splash-img {
+    width: 100%;
+    height: auto;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+}
+
+.mobile-splash .splash-action {
+    width: 100%;
+}
+
+.mobile-splash .splash-btn {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    text-align: center;
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    border: none;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    cursor: pointer;
+}
+
+/* --- Navigation --- */
+.intro-page-container .chat-header {
+    background: white;
+    padding: 1.5rem 10%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.intro-page-container .logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.intro-page-container .logo span {
+    color: var(--primary);
+}
+
+.intro-page-container .nav-menu a {
+    text-decoration: none;
+    color: var(--text-muted);
+    margin-left: 2rem;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.intro-page-container .nav-menu a:hover {
+    color: var(--primary);
+}
+
+.intro-page-container .btn-pro-nav {
+    padding: 0.5rem 1.2rem; 
+    margin-left: 1rem;
+}
+
+/* --- Hero Section --- */
+.intro-page-container .hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5rem 10%;
+    gap: 4rem;
+    min-height: 85vh;
+}
+
+.intro-page-container .hero-content {
+    flex: 1;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.intro-page-container .hero-content h1 {
+    font-size: 3.5rem;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+}
+
+.intro-page-container .hero-content p {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.intro-page-container .btn {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s, transform 0.2s;
+    cursor: pointer;
+    border: none;
+}
+
+.intro-page-container .btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.intro-page-container .hero-media {
+    flex: 1;
+    position: relative;
+    animation: fadeInUp 1s ease-out;
+}
+
+.intro-page-container .hero-media video {
+    width: 100%;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid #e2e8f0;
+}
+
+/* --- How It Works Section --- */
+.intro-page-container .how-it-works {
+    background: white;
+    padding: 5rem 10%;
+    text-align: center;
+}
+
+.intro-page-container .section-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.intro-page-container .section-subtitle {
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.intro-page-container .steps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.intro-page-container .step-card {
+    background: var(--bg-light);
+    padding: 2.5rem 2rem;
+    border-radius: 12px;
+    transition: transform 0.3s;
+}
+
+.intro-page-container .step-card:hover {
+    transform: translateY(-5px);
+}
+
+.intro-page-container .step-num {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem auto;
+    font-weight: bold;
+}
+
+/* --- Features & Showcases --- */
+.intro-page-container .showcase-section {
+    padding: 5rem 10%;
+}
+
+.intro-page-container .showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    margin-bottom: 5rem;
+}
+
+.intro-page-container .showcase-grid.reverse {
+    direction: rtl;
+}
+
+.intro-page-container .showcase-grid.reverse .showcase-text {
+    direction: ltr;
+}
+
+.intro-page-container .showcase-image img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+/* --- Pricing & Payment Plans --- */
+.intro-page-container .pricing {
+    background: white;
+    padding: 5rem 10%;
+    text-align: center;
+}
+
+.intro-page-container .pricing-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.intro-page-container .plan-card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow, 0 10px 30px rgba(0, 0, 0, 0.05));
+    background: white;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    height: 100%; 
+}
+
+.intro-page-container .plan-header {
+    padding: 2rem 1rem;
+    color: white;
+}
+
+/* Plan Variants Styling Details */
+.intro-page-container .plan-free .plan-header { background: #475569; }
+.intro-page-container .plan-basic .plan-header { background: #2563eb; }
+.intro-page-container .plan-standard .plan-header { background: #9333ea; }
+.intro-page-container .plan-pro .plan-header { background: linear-gradient(135deg, #eab308 0%, #ea580c 100%); }
+
+.intro-page-container .plan-header h3 { font-size: 1.3rem; margin-bottom: 0.5rem; text-transform: capitalize; }
+.intro-page-container .plan-price { font-size: 2.3rem; font-weight: 700; }
+.intro-page-container .plan-duration { font-size: 0.9rem; opacity: 0.9; }
+
+.intro-page-container .plan-features {
+    padding: 2rem 1.5rem;
+    list-style: none;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.intro-page-container .plan-features li {
+    margin-bottom: 0.8rem;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.intro-page-container .plan-features li::before {
+    content: "✓";
+    color: #10b981;
+    font-weight: bold;
+}
+
+.intro-page-container .plan-btn {
+    margin: 0 1.5rem 2rem 1.5rem;
+    background: #000;
+    color: white;
+    padding: 0.8rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: opacity 0.2s;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+}
+
+.intro-page-container .plan-btn:hover {
+    opacity: 0.9;
+}
+
+/* --- Footer & Payment --- */
+.intro-page-container footer {
+    background: var(--text-dark);
+    color: white;
+    padding: 4rem 10% 2rem 10%;
+}
+
+.intro-page-container .footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 3rem;
+}
+
+.intro-page-container .footer-info h2 {
+    margin-bottom: 1rem; 
+    font-size: 2rem;
+}
+
+.intro-page-container .footer-desc {
+    color: var(--text-muted); 
+    max-width: 450px; 
+    margin-bottom: 1.5rem;
+}
+
+.intro-page-container .support-node {
+    font-size: 0.95rem; 
+    color: #e2e8f0;
+}
+
+.intro-page-container .payment-box {
+    background: white;
+    color: var(--text-dark);
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    box-shadow: var(--card-shadow);
+}
+
+.intro-page-container .payment-box h4 {
+    font-weight: 700; 
+    border-bottom: 1px solid #e2e8f0; 
+    padding-bottom: 0.5rem;
+}
+
+.intro-page-container .upi-detail {
+    margin-top: 0.8rem; 
+    font-size: 0.9rem;
+}
+
+.intro-page-container .upi-detail span {
+    color: var(--primary);
+}
+
+.intro-page-container .phonepe-detail {
+    font-size: 0.9rem;
+}
+
+.intro-page-container .qr-code {
+    width: 180px;
+    height: 180px;
+    margin: 1rem auto;
+    display: block;
+}
+
+.intro-page-container .qr-caption {
+    font-size: 0.75rem; 
+    text-align: center; 
+    color: var(--text-muted);
+}
+
+.intro-page-container .footer-bottom {
+    text-align: center;
+    padding-top: 2rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* --- Media Queries --- */
+@media (max-width: 1100px) {
+    .intro-page-container .pricing-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 968px) {
+    .intro-page-container .hero { flex-direction: column; text-align: center; padding: 3rem 5%; }
+    .intro-page-container .showcase-grid, .intro-page-container .showcase-grid.reverse { grid-template-columns: 1fr; direction: ltr; }
+    .intro-page-container .chat-header { padding: 1.5rem 5%; }
+    .intro-page-container .hero-content h1 { font-size: 2.5rem; }
+    
+    .intro-page-container .nav-menu a {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .hide-on-mobile {
+        display: none !important;
+    }
+    .mobile-splash {
+        display: flex;
+    }
+}

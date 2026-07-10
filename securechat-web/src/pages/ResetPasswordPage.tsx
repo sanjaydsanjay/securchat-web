@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabaseConfig'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MessageSquare, Lock, CheckCircle } from 'lucide-react'
+import { MessageSquare, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react'
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -13,6 +13,8 @@ export function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [hasSession, setHasSession] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   useEffect(() => {
     // Check if we have a valid session (from the recovery link)
@@ -42,15 +44,17 @@ export function ResetPasswordPage() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error: updateError } = await supabase.auth.updateUser({ password })
+    
     setLoading(false)
 
-    if (error) {
-      setError(error.message)
+    if (updateError) {
+      setError(updateError.message)
     } else {
       setSuccess(true)
-      setTimeout(() => {
-        supabase.auth.signOut()
+      setTimeout(async () => {
+        await supabase.auth.signOut()
         navigate('/login', { replace: true })
       }, 2500)
     }
@@ -92,24 +96,42 @@ export function ResetPasswordPage() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="New password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="pl-10"
+                className="pl-10 pr-10"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
 
-            <Input
-              type="password"
-              placeholder="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={6}
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={6}
+                className="pl-10 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
 
             {error && <p className="text-xs text-red-500">{error}</p>}
 
