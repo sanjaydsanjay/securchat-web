@@ -7,7 +7,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Build output
 dist
 dist-ssr
 *.local
@@ -18,14 +23,31 @@ dist-ssr
 .env.development
 .env.production
 .env.staging
+.env.test
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+.nyc_output
+
+# TypeScript
+*.tsbuildinfo
+.next/**
+
+# Vercel
+.vercel
+
+# Supabase
+supabase/.temp

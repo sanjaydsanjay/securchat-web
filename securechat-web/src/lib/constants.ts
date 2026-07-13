@@ -1,5 +1,5 @@
 export const APP_NAME = 'SecureChat AI'
-export const APP_URL = 'http://localhost:5179'
+export const APP_URL = import.meta.env.VITE_APP_URL || 'http://localhost:5179'
 
 export const UNIQUE_ID_MIN = 100000
 export const UNIQUE_ID_MAX = 999999

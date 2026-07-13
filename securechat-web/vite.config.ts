@@ -9,17 +9,33 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-   server: {
+  server: {
     host: "0.0.0.0",
     port: 5174,
     strictPort: true,
+  },
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['lucide-react', 'framer-motion'],
+          query: ['@tanstack/react-query'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+    minify: 'esbuild',
+    target: 'es2022',
   },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/vitest.setup.ts'],
-    include: ['src/**/*.{test,spec}.{ts,tsx}', 'public/**/*.{test,spec}.{ts,tsx}', 'supabase/**/*.{test,spec}.{ts,tsx}', 'dist/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['tests/**', '**/*.spec.ts', '**/__tests__/**/*.spec.ts', 'node_modules/**'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['tests/**', 'node_modules/**', 'dist/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

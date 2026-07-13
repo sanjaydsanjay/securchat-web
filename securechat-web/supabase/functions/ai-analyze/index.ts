@@ -4,12 +4,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || ''
 const MODEL = 'openai/gpt-4o-mini'
 
-const ALLOWED_ORIGINS = [
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || '').split(',').concat([
   'http://localhost:5179',
   'http://127.0.0.1:5179',
   'http://localhost:3000',
   'http://10.149.61.225:5179',
-]
+]).filter(Boolean)
 
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false

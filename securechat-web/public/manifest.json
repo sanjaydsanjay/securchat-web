@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#FFFFFF",
-  "theme_color": "#128C7E",
+  "theme_color": "#111111",
   "categories": ["social", "communication", "security"],
   "lang": "en",
   "dir": "ltr",

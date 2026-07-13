@@ -8,8 +8,8 @@ export const notificationService = {
     if (Notification.permission !== 'granted') return
     const registration = await navigator.serviceWorker.ready
     registration.showNotification(title, {
-      icon: '/icon-192x192.png',
-      badge: '/badge-72x72.png',
+      icon: '/favicon.svg',
+      badge: '/favicon.svg',
       ...options,
     })
   },
