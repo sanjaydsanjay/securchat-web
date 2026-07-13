@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useChatStore } from '@/stores/chatStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useAuth } from '@/hooks/useAuth'
 import { Loader } from '@/components/shared/Loader'
@@ -72,6 +73,18 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function ChatRoute() {
+  const { id } = useParams()
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId)
+
+  useEffect(() => {
+    setActiveChatId(id || null)
+    return () => { setActiveChatId(null) }
+  }, [id, setActiveChatId])
+
+  return <ChatPage />
+}
+
 function AppRoutes() {
   const { user, loading } = useAuthStore()
   const location = useLocation()
@@ -104,6 +117,7 @@ function AppRoutes() {
 
         {/* Protected routes */}
         <Route path="/" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+        <Route path="/chat/:id" element={<ProtectedRoute><ChatRoute /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />

@@ -18,9 +18,19 @@ export const paymentService = {
   },
 
   async createPayment(payload: CreatePaymentPayload): Promise<{ data: Payment | null; error: unknown }> {
+    const { data: user } = await supabase
+      .from('users')
+      .select('unique_id')
+      .eq('auth_id', (await supabase.auth.getUser()).data.user?.id)
+      .single()
+
+    if (!user) return { data: null, error: 'User not found' }
+
     const { data, error } = await supabase
       .from('payments')
       .insert({
+        user_unique_id: user.unique_id,
+        plan: payload.plan_name,
         plan_name: payload.plan_name,
         amount: payload.amount,
         payment_method: payload.payment_method,

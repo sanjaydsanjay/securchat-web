@@ -205,7 +205,7 @@ export function LoginPage() {
                 onClick={() => navigate('/forgot-password')}
                 className="text-xs text-[#128C7E] hover:underline block ml-auto"
               >
-              
+                Forgot Password?
               </button>
             )}
 

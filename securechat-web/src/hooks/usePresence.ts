@@ -45,24 +45,6 @@ export function usePresence() {
       setOnlineUserIds(onlineIds)
     })
 
-    channel.on('presence', { event: 'join' }, ({ key }) => {
-      if (!mountedRef.current) return
-      supabase
-        .from('users')
-        .update({ is_online: true })
-        .eq('unique_id', parseInt(key))
-        .then()
-    })
-
-    channel.on('presence', { event: 'leave' }, ({ key }) => {
-      if (!mountedRef.current) return
-      supabase
-        .from('users')
-        .update({ is_online: false, last_seen: new Date().toISOString() })
-        .eq('unique_id', parseInt(key))
-        .then()
-    })
-
     channel.subscribe(async (status) => {
       if (!mountedRef.current) return
       if (status !== 'SUBSCRIBED') return

@@ -7,6 +7,7 @@ import { useChatStore } from '@/stores/chatStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useBlock } from '@/hooks/useBlock'
 import { useChat } from '@/hooks/useChat'
+import { useNavigate } from 'react-router-dom'
 import { MoreVertical, Search, ChevronLeft, Trash2, Download, Flag, Shield, UserCircle, Star, MessageSquare } from 'lucide-react'
 import type { Chat } from '@/types/chat'
 
@@ -21,6 +22,7 @@ export function ChatHeader({ chat, onSearchToggle, showSearch }: ChatHeaderProps
   const user = useAuthStore((s) => s.user)
   const { selectChat } = useChat()
   const { blockUser } = useBlock()
+  const navigate = useNavigate()
   const isOnline = onlineUserIds.includes(chat.other_user?.unique_id ?? -1)
   const [menuOpen, setMenuOpen] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
@@ -61,7 +63,7 @@ export function ChatHeader({ chat, onSearchToggle, showSearch }: ChatHeaderProps
 
   const menuItems = [
     { icon: <UserCircle className="w-4 h-4" />, label: 'View Profile', onClick: () => { setMenuOpen(false); setShowProfile(true) } },
-    { icon: <Star className="w-4 h-4" />, label: 'Starred Messages', onClick: () => setMenuOpen(false) },
+    { icon: <Star className="w-4 h-4" />, label: 'Starred Messages', onClick: () => { setMenuOpen(false); navigate('/starred') } },
     { icon: <MessageSquare className="w-4 h-4" />, label: 'Clear Chat', onClick: () => { setMenuOpen(false); setShowClearConfirm(true) } },
     { icon: <Download className="w-4 h-4" />, label: 'Export Chat', onClick: () => { setMenuOpen(false); setShowExport(true) } },
     { icon: <Flag className="w-4 h-4" />, label: 'Report User', onClick: () => { setMenuOpen(false); setShowReportModal(true) } },
@@ -105,15 +107,16 @@ export function ChatHeader({ chat, onSearchToggle, showSearch }: ChatHeaderProps
             {menuOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 z-50 rounded-lg bg-white shadow-lg border border-gray-100 py-2 overflow-hidden">
                 {menuItems.map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={item.onClick}
-                    className={`w-full flex items-center gap-3 px-5 py-3 text-[14px] transition-colors ${
-                      item.danger ? 'text-red-500 hover:bg-red-50' : 'text-[#2b3a4a] hover:bg-gray-50'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
+                    <button
+                      key={item.label}
+                      onClick={item.onClick}
+                      className={`w-full flex items-center gap-3 px-5 py-3 text-[14px] transition-colors ${
+                        item.danger ? 'text-red-500 hover:bg-red-50' : 'text-[#2b3a4a] hover:bg-gray-50'
+                      }`}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </button>
                 ))}
               </div>
             )}
