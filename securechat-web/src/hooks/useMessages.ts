@@ -19,6 +19,7 @@ export function useMessages(chatId: string | null) {
   const { messages, setMessages, addMessage, updateMessage, removeMessage } = useChatStore()
   const user = useAuthStore((s) => s.user)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const mountedRef = useRef(false)
 
   // Helper to decrypt E2E messages
   const decryptE2EContent = useCallback(async (msg: Message): Promise<Message> => {
@@ -116,7 +117,14 @@ export function useMessages(chatId: string | null) {
   // Realtime subscription
   useEffect(() => {
     if (!chatId) return
+    mountedRef.current = true
     loadMessages()
+
+    // Clean up any stale channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
 
     const channel = supabase
       .channel(`messages:${chatId}`)
@@ -129,26 +137,23 @@ export function useMessages(chatId: string | null) {
           filter: `chat_id=eq.${chatId}`,
         },
         async (payload: { new: Message }) => {
+          if (!mountedRef.current) return
           const msg = payload.new
           if (msg.is_deleted) return
 
           const blocked = useAuthStore.getState().user?.blocked_users || []
           if (blocked.includes(msg.sender_unique_id)) return
 
-          // Skip messages from self (already added optimistically)
           if (msg.sender_unique_id === user?.unique_id) return
 
-          // Validate incoming message content
           const contentCheck = messageContentSchema.safeParse(msg.content)
           if (!contentCheck.success) {
             msg.content = '[Message content blocked]'
           }
 
-          // Decrypt E2E messages before displaying
           const displayMsg = await decryptE2EContent(msg)
           addMessage(chatId, displayMsg)
 
-          // Auto-mark as delivered
           if (msg.receiver_unique_id === user?.unique_id && !msg.delivered_at) {
             supabase
               .from('messages')
@@ -157,7 +162,6 @@ export function useMessages(chatId: string | null) {
               .then()
           }
 
-          // Mark as read if chat is active
           if (msg.receiver_unique_id === user?.unique_id && document.hasFocus()) {
             markAsRead([msg.id])
           }
@@ -172,6 +176,7 @@ export function useMessages(chatId: string | null) {
           filter: `chat_id=eq.${chatId}`,
         },
         (payload: { new: Message }) => {
+          if (!mountedRef.current) return
           const msg = payload.new
           if (msg.is_deleted || (msg.deleted_for?.includes(user?.unique_id ?? -1))) {
             removeMessage(chatId, msg.id)
@@ -185,7 +190,11 @@ export function useMessages(chatId: string | null) {
     channelRef.current = channel
 
     return () => {
-      supabase.removeChannel(channel)
+      mountedRef.current = false
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
   }, [chatId, loadMessages])
 

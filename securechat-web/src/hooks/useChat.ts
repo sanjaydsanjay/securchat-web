@@ -11,6 +11,8 @@ export function useChat() {
   const { chats, setChats, addChat, updateChat, activeChatId, setActiveChatId } = useChatStore()
   const user = useAuthStore((s) => s.user)
   const pendingChatRef = useRef<Set<string>>(new Set())
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+  const mountedRef = useRef(false)
 
   // Enrich chat with other user's info
   const enrichChats = useCallback(
@@ -46,11 +48,18 @@ export function useChat() {
 
   useEffect(() => {
     if (!user) return
+    mountedRef.current = true
     loadChats()
+
+    // Clean up any stale channel before creating new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
 
     // Subscribe to chat updates (last message, unread counts)
     const channel = supabase
-      .channel('chats-updates')
+      .channel(`chats-updates-${user.unique_id}`)
       .on(
         'postgres_changes',
         {
@@ -59,6 +68,7 @@ export function useChat() {
           table: 'chats',
         },
         async (payload) => {
+          if (!mountedRef.current) return
           if (payload.eventType === 'INSERT') {
             const chat = payload.new as Chat
             if (pendingChatRef.current.has(chat.id)) {
@@ -79,7 +89,6 @@ export function useChat() {
               chat.participant_2_id !== user.unique_id
             ) return
 
-            // If current user deleted this chat, remove from store
             if (chat.deleted_for?.includes(user.unique_id)) {
               const store = useChatStore.getState()
               store.setChats(store.chats.filter((c) => c.id !== chat.id))
@@ -92,8 +101,14 @@ export function useChat() {
       )
       .subscribe()
 
+    channelRef.current = channel
+
     return () => {
-      supabase.removeChannel(channel)
+      mountedRef.current = false
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
   }, [user])
 

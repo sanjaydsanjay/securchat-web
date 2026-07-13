@@ -10,16 +10,25 @@ export function useTypingIndicator(chatId: string | null) {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const isTypingRef = useRef(false)
+  const mountedRef = useRef(false)
 
   // Listen for typing events from the other participant
   useEffect(() => {
     if (!chatId || !user) return
+    mountedRef.current = true
+
+    // Clean up any stale channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
 
     const channel = supabase.channel(`typing:${chatId}`, {
       config: { broadcast: { ack: false, self: false } },
     })
 
     channel.on('broadcast', { event: 'typing:start' }, (payload) => {
+      if (!mountedRef.current) return
       if (payload.payload.userId !== user.unique_id) {
         setTypingUsers(chatId, [
           { userId: payload.payload.userId, displayName: payload.payload.displayName },
@@ -28,6 +37,7 @@ export function useTypingIndicator(chatId: string | null) {
     })
 
     channel.on('broadcast', { event: 'typing:stop' }, (payload) => {
+      if (!mountedRef.current) return
       if (payload.payload.userId !== user.unique_id) {
         setTypingUsers(chatId, [])
       }
@@ -37,10 +47,14 @@ export function useTypingIndicator(chatId: string | null) {
     channelRef.current = channel
 
     return () => {
-      supabase.removeChannel(channel)
+      mountedRef.current = false
       setTypingUsers(chatId, [])
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
+      }
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
       }
     }
   }, [chatId, user?.unique_id])
