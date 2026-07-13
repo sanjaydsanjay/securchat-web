@@ -1,4 +1,6 @@
 {
+  "buildCommand": "cd securechat-web && npm install && npm run build",
+  "outputDirectory": "securechat-web/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [
     {
