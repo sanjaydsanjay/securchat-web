@@ -6,7 +6,7 @@ import { ChatExport } from './ChatExport'
 import { useChatStore } from '@/stores/chatStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useBlock } from '@/hooks/useBlock'
-import { useChat } from '@/hooks/useChat'
+import { useUIStore } from '@/stores/uiStore'
 import { useNavigate } from 'react-router-dom'
 import { MoreVertical, Search, ChevronLeft, Trash2, Download, Flag, Shield, UserCircle, Star, MessageSquare } from 'lucide-react'
 import type { Chat } from '@/types/chat'
@@ -20,7 +20,7 @@ interface ChatHeaderProps {
 export function ChatHeader({ chat, onSearchToggle, showSearch }: ChatHeaderProps) {
   const onlineUserIds = useChatStore((s) => s.onlineUserIds)
   const user = useAuthStore((s) => s.user)
-  const { selectChat } = useChat()
+  const setActiveChatId = useChatStore((s) => s.setActiveChatId)
   const { blockUser } = useBlock()
   const navigate = useNavigate()
   const isOnline = onlineUserIds.includes(chat.other_user?.unique_id ?? -1)
@@ -41,7 +41,12 @@ export function ChatHeader({ chat, onSearchToggle, showSearch }: ChatHeaderProps
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleBack = () => selectChat(null)
+  const handleBack = () => {
+    setActiveChatId(null)
+    if (window.innerWidth < 768) {
+      useUIStore.getState().setMobileView('list')
+    }
+  }
 
   const handleBlock = async () => {
     if (!chat.other_user?.unique_id) return
@@ -57,7 +62,7 @@ export function ChatHeader({ chat, onSearchToggle, showSearch }: ChatHeaderProps
   const handleDeleteChat = () => {
     const store = useChatStore.getState()
     store.setChats(store.chats.filter((c) => c.id !== chat.id))
-    if (store.activeChatId === chat.id) selectChat(null)
+    if (store.activeChatId === chat.id) setActiveChatId(null)
     setShowDeleteConfirm(false)
   }
 

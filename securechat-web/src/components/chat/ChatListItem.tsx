@@ -60,13 +60,16 @@ export const ChatListItem = memo(function ChatListItem({ chat, active, onClick, 
           )}
         </div>
         {onDelete && (
-          <button
+          <span
             onClick={(e) => { e.stopPropagation(); onDelete() }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/80 hover:bg-red-50 text-[#8a99a8] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/80 hover:bg-red-50 text-[#8a99a8] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm cursor-pointer"
             title="Delete chat"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onDelete() } }}
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </span>
         )}
         <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center mb-[4px]">
