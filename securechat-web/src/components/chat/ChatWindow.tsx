@@ -12,9 +12,15 @@ import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import { useChatStore } from '@/stores/chatStore'
 import { useUserStore } from '@/stores/userStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { messageService } from '@/services/messageService'
+import { MessageActionSheet } from './MessageActionSheet'
+import { ForwardModal } from './ForwardModal'
+import { MessageInfoModal } from './MessageInfoModal'
 import { initScreenshotDetection, createScreenshotBlur } from '@/utils/screenshotDetect'
+import toast from 'react-hot-toast'
 import type { SendMessagePayload } from '@/types/message'
+import type { Message } from '@/types/message'
 
 interface ChatWindowProps {
   chatId: string
@@ -24,6 +30,13 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
   const [showSearch, setShowSearch] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<{ messageId: string; forEveryone: boolean } | null>(null)
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('')
+  const [actionMessage, setActionMessage] = useState<Message | null>(null)
+  const [actionOpen, setActionOpen] = useState(false)
+  const [editing, setEditing] = useState<{ id: string; content: string } | null>(null)
+  const [replyTo, setReplyTo] = useState<Message | null>(null)
+  const [forwardMessage, setForwardMessage] = useState<Message | null>(null)
+  const [infoMessage, setInfoMessage] = useState<Message | null>(null)
+  const isMobile = useIsMobile()
   const { messages, loading, hasMore, loadingMore, loadMore, sendMessage, editMessage, deleteMessage, addReaction, toggleStar, markAllAsRead } = useMessages(chatId)
   const { startTyping } = useTypingIndicator(chatId)
   const chats = useChatStore((s) => s.chats)
@@ -115,9 +128,11 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
   }, [setSearchQuery, setSearchResults])
 
   const handleSend = async (payload: SendMessagePayload) => {
-    const result = await sendMessage(payload)
+    const result = await sendMessage({ ...payload, reply_to_id: replyTo?.id ?? null })
     if (result?.error) {
       console.error('[ChatWindow] Send failed:', result.error)
+    } else {
+      setReplyTo(null)
     }
   }
 
@@ -150,9 +165,52 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
     }
   }, [addStarredMessage, removeStarredMessage, toggleStar])
 
+  const handleLongPress = useCallback((message: Message) => {
+    setActionMessage(message)
+    setActionOpen(true)
+  }, [])
+
+  const closeActionSheet = useCallback(() => setActionOpen(false), [])
+
+  const handleActionReply = useCallback((message: Message) => {
+    setReplyTo(message)
+    setEditing(null)
+  }, [])
+
+  const handleActionCopy = useCallback(async (message: Message) => {
+    const text = message.content || message.media_url || ''
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('Copied to clipboard')
+    } catch {
+      toast.error('Could not copy')
+    }
+  }, [])
+
+  const handleActionForward = useCallback((message: Message) => {
+    setForwardMessage(message)
+  }, [])
+
+  const handleActionEdit = useCallback((message: Message) => {
+    setEditing({ id: message.id, content: message.content })
+    setReplyTo(null)
+  }, [])
+
+  const handleActionDelete = useCallback(async (message: Message, forEveryone: boolean) => {
+    await deleteMessage(message.id, forEveryone ? 'everyone' : 'me')
+  }, [deleteMessage])
+
+  const handleSaveEdit = useCallback(async (content: string) => {
+    if (!editing) return
+    await editMessage(editing.id, content)
+    setEditing(null)
+  }, [editing, editMessage])
+
   if (!chat) {
     return <div className="h-full flex items-center justify-center text-gray-400 text-sm">Loading conversation...</div>
   }
+
+  const isOwnAction = actionMessage ? actionMessage.sender_unique_id === user?.unique_id : false
 
   return (
     <div className="h-full flex flex-col">
@@ -188,7 +246,7 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 px-2 md:px-[30px] py-3 md:py-5 overflow-y-auto flex flex-col gap-5"
+        className="flex-1 px-2 md:px-[30px] py-3 md:py-5 overflow-y-auto overflow-x-hidden flex flex-col gap-5 messages-scroll"
         role="log"
         aria-live="polite"
         aria-label="Chat messages"
@@ -217,6 +275,7 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
                   key={msg.id}
                   message={msg}
                   chat={chat}
+                  isMobile={isMobile}
                   onStar={() => handleStar(msg.id)}
                   onReact={(emoji) => addReaction(msg.id, emoji)}
                 />
@@ -242,6 +301,9 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
                 <MessageBubble
                   message={msg}
                   chat={chat}
+                  isMobile={isMobile}
+                  isSelected={actionOpen && actionMessage?.id === msg.id}
+                  onLongPress={isMobile ? handleLongPress : undefined}
                   onEdit={(content) => editMessage(msg.id, content)}
                   onDelete={(forEveryone) => handleDeleteClick(msg.id, forEveryone)}
                   onReact={(emoji) => addReaction(msg.id, emoji)}
@@ -258,8 +320,43 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
 
       <MessageInput
         chatId={chatId}
+        replyTo={replyTo}
+        onReplyClose={() => setReplyTo(null)}
+        editing={editing}
+        onCancelEdit={() => setEditing(null)}
+        onSaveEdit={handleSaveEdit}
         onSend={handleSend}
         onTyping={handleTyping}
+      />
+
+      {isMobile && (
+        <MessageActionSheet
+          open={actionOpen}
+          message={actionMessage}
+          isOwn={isOwnAction}
+          onClose={closeActionSheet}
+          onReply={handleActionReply}
+          onCopy={handleActionCopy}
+          onForward={handleActionForward}
+          onEdit={handleActionEdit}
+          onDelete={handleActionDelete}
+          onStar={(m) => handleStar(m.id)}
+          onInfo={(m) => setInfoMessage(m)}
+        />
+      )}
+
+      <ForwardModal
+        open={!!forwardMessage}
+        message={forwardMessage}
+        currentChatId={chatId}
+        onClose={() => setForwardMessage(null)}
+      />
+
+      <MessageInfoModal
+        open={!!infoMessage}
+        message={infoMessage}
+        isOwn={infoMessage ? infoMessage.sender_unique_id === user?.unique_id : false}
+        onClose={() => setInfoMessage(null)}
       />
 
       <Dialog

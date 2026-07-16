@@ -10,13 +10,26 @@ import type { Chat } from '@/types/chat'
 interface MessageBubbleProps {
   message: Message
   chat: Chat
+  isMobile?: boolean
+  isSelected?: boolean
+  onLongPress?: (message: Message) => void
   onEdit?: (content: string) => void
   onDelete?: (forEveryone: boolean) => void
   onReact?: (emoji: string) => void
   onStar?: () => void
 }
 
-export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit, onDelete, onReact, onStar }: MessageBubbleProps) {
+export const MessageBubble = memo(function MessageBubble({
+  message,
+  chat,
+  isMobile = false,
+  isSelected = false,
+  onLongPress,
+  onEdit,
+  onDelete,
+  onReact,
+  onStar,
+}: MessageBubbleProps) {
   const user = useAuthStore((s) => s.user)
   const starredMessages = useUserStore((s) => s.starredMessages)
   const isOwn = message.sender_unique_id === user?.unique_id
@@ -24,6 +37,8 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
   const contextRef = useRef<HTMLDivElement>(null)
+  const longPressTimer = useRef<number | null>(null)
+  const longPressFired = useRef(false)
   const isStarred = starredMessages.includes(message.id)
 
   useEffect(() => {
@@ -42,6 +57,10 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
   }, [contextMenu])
 
   const handleContextMenu = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (isMobile) {
+      e.preventDefault()
+      return
+    }
     e.preventDefault()
     e.stopPropagation()
     if ('touches' in e) {
@@ -50,7 +69,39 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
     } else {
       setContextMenu({ x: e.clientX, y: e.clientY })
     }
+  }, [isMobile])
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current !== null) {
+      window.clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
   }, [])
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isMobile || !onLongPress) return
+      longPressFired.current = false
+      const touch = e.touches[0]
+      longPressTimer.current = window.setTimeout(() => {
+        longPressFired.current = true
+        onLongPress(message)
+      }, 450)
+      // keep reference to prevent scroll-cancel on very light movement
+      void touch
+    },
+    [isMobile, onLongPress, message],
+  )
+
+  const handleTouchEnd = useCallback(() => {
+    clearLongPress()
+  }, [clearLongPress])
+
+  const handleTouchMove = useCallback(() => {
+    clearLongPress()
+  }, [clearLongPress])
+
+  useEffect(() => () => clearLongPress(), [clearLongPress])
 
   if (message.deleted_for?.includes(user?.unique_id ?? -1)) return null
 
@@ -65,14 +116,15 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
   const renderStatus = () => {
     if (!isOwn) return null
     const readCount = message.read_by ? Object.keys(message.read_by).length : 0
-    const hasRead = readCount > 1 || (readCount === 1 && !message.read_by?.[user?.unique_id?.toString() || ''])
+    const hasRead = readCount > 0
     const isDelivered = message.delivered_at
 
-    if (message.status === 'sending') return <Clock className="w-3.5 h-3.5 text-white/60" />
+    if (message.status === 'sending') return <Clock className="w-3.5 h-3.5 text-white/40" />
     if (message.status === 'failed') return <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-    if (hasRead) return <CheckCheck className="w-3.5 h-3.5 text-white/90" />
+    if (hasRead) return <CheckCheck className="w-3.5 h-3.5 text-sky-300" />
     if (isDelivered) return <CheckCheck className="w-3.5 h-3.5 text-white/60" />
-    return <Check className="w-3.5 h-3.5 text-white/60" />
+    if (message.status === 'sent') return <Check className="w-3.5 h-3.5 text-white/60" />
+    return <Clock className="w-3.5 h-3.5 text-white/40" />
   }
 
   const renderContent = () => {
@@ -137,16 +189,24 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
     )
   }
 
+  const showDesktopActions = !isMobile && showActions && !contextMenu
+
   return (
-    <div className={`flex mb-1.5 group ${isOwn ? 'justify-end' : 'justify-start'}`}>
+    <div
+      className={`flex mb-1.5 group ${isOwn ? 'justify-end' : 'justify-start'} ${isSelected ? 'opacity-80' : ''}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      onTouchCancel={handleTouchEnd}
+    >
       <div
         className={`relative max-w-[75%] md:max-w-[65%] px-[18px] py-[14px] text-[13.5px] leading-relaxed ${
           isOwn
             ? 'bg-[#5c7cfa] text-white rounded-[18px] rounded-tr-[4px]'
             : 'bg-white text-[#2b3a4a] rounded-[18px] rounded-tl-[4px]'
-        }`}
-        onMouseEnter={() => setShowActions(true)}
-        onMouseLeave={() => { setShowActions(false); setContextMenu(null) }}
+        } ${isSelected ? 'ring-2 ring-[#5c7cfa] ring-offset-2 ring-offset-[#f1f3f9]' : ''}`}
+        onMouseEnter={() => !isMobile && setShowActions(true)}
+        onMouseLeave={() => { if (!isMobile) { setShowActions(false); setContextMenu(null) } }}
         onContextMenu={handleContextMenu}
       >
         {message.reply_to_id && message.reply_to && (
@@ -181,7 +241,7 @@ export const MessageBubble = memo(function MessageBubble({ message, chat, onEdit
         {showReactionPicker && (
           <div className="absolute -top-10 left-0 z-50"><ReactionPicker onReact={(emoji) => onReact?.(emoji)} onClose={() => setShowReactionPicker(false)} /></div>
         )}
-        {showActions && !contextMenu && (
+        {showDesktopActions && (
           <div className={`absolute -top-8 flex gap-0.5 bg-white rounded-[16px] shadow-lg border border-gray-100 px-2 py-1 ${isOwn ? 'right-0' : 'left-0'}`}>
             <button onClick={() => setShowReactionPicker(true)} className="p-0.5 hover:bg-gray-100 rounded-[8px] text-xs">😊</button>
             <button onClick={() => onStar?.()} className={`p-0.5 hover:bg-gray-100 rounded-[8px] text-xs ${isStarred ? 'text-yellow-500' : ''}`}>{isStarred ? '★' : '☆'}</button>

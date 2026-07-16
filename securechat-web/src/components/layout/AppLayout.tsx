@@ -8,7 +8,6 @@ import { EmptyChatState } from '@/components/chat/EmptyChatState'
 import { CommandPalette } from './CommandPalette'
 import { NavSidebar } from './NavSidebar'
 import { MobileNav } from './MobileNav'
-import { FabButton } from '@/components/chat/FabButton'
 import { SearchUserModal } from '@/components/chat/SearchUserModal'
 
 export function AppLayout() {
@@ -20,7 +19,7 @@ export function AppLayout() {
   useTheme()
 
   return (
-    <div className="h-screen flex overflow-hidden bg-[#e2e4e6] p-0 md:p-[30px] gap-0 md:gap-[30px]">
+    <div className="fixed inset-0 md:static md:inset-auto h-[100dvh] md:h-screen flex flex-col md:flex-row overflow-hidden overflow-x-hidden bg-[#e2e4e6] p-0 md:p-[30px] gap-0 md:gap-[30px]">
       {/* Desktop Left - Navigation Sidebar */}
       <NavSidebar />
 
@@ -37,7 +36,7 @@ export function AppLayout() {
       <div className={`
         bg-[#f1f3f9] flex-1 min-w-0 flex flex-col overflow-hidden
         md:relative md:rounded-[20px]
-        fixed md:static inset-0 z-20 md:z-0
+        absolute inset-0 z-20 md:z-0 md:static
         transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
         ${mobileView === 'chat' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
       `}>
@@ -50,7 +49,6 @@ export function AppLayout() {
 
       {/* Mobile bottom nav - hidden in chat view */}
       {!isChatView && <MobileNav />}
-      {!isChatView && <FabButton />}
       <SearchUserModal />
       <CommandPalette />
     </div>
