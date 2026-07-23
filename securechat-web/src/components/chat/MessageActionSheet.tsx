@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Trash2, Ban, Star, Info, Reply, Copy, Forward, X } from 'lucide-react'
+import { Pencil, Trash2, Ban, Star, Info, Reply, Copy, Forward, X, Shield, ShieldOff } from 'lucide-react'
+import { useBlock } from '@/hooks/useBlock'
 import type { Message } from '@/types/message'
 
 interface MessageActionSheetProps {
@@ -34,6 +35,8 @@ export function MessageActionSheet({
   onInfo,
 }: MessageActionSheetProps) {
   const [confirmDelete, setConfirmDelete] = useState<null | boolean>(null)
+  const { blockUser, unblockUser, isBlocked } = useBlock()
+  const senderBlocked = message && !isOwn && isBlocked(message.sender_unique_id)
 
   const close = useCallback(() => {
     setConfirmDelete(null)
@@ -115,6 +118,13 @@ export function MessageActionSheet({
                 )}
                 <SheetItem icon={<Star className="w-5 h-5" />} label="Star" onClick={() => handleAction(onStar)} />
                 <SheetItem icon={<Info className="w-5 h-5" />} label="Info" onClick={() => handleAction(onInfo)} />
+                {!isOwn && (
+                  senderBlocked ? (
+                    <SheetItem icon={<ShieldOff className="w-5 h-5" />} label="Unblock User" onClick={() => { if (message) { unblockUser(message.sender_unique_id); close() } }} />
+                  ) : (
+                    <SheetItem icon={<Shield className="w-5 h-5 text-red-500" />} label="Block User" danger onClick={() => { if (message) { blockUser(message.sender_unique_id); close() } }} />
+                  )
+                )}
                 <button
                   onClick={close}
                   className="w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-medium text-[#2b3a4a] dark:text-gray-200 border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800"

@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Check, Crown, ArrowLeft, Shield, Smartphone, CreditCard, QrCode, Wallet, Upload, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Check, Crown, ArrowLeft, Shield, Smartphone, CreditCard, QrCode, Wallet, Upload, Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import { PREMIUM_PLANS, DEV_INFO } from '@/lib/constants'
 import { useAuthStore } from '@/stores/authStore'
 import { paymentService } from '@/services/paymentService'
+import { authService } from '@/services/authService'
 import { env } from '@/lib/env'
 import toast from 'react-hot-toast'
 import scannerImg from './scannerimage.png'
@@ -17,12 +19,24 @@ declare global {
 
 export function PremiumPage() {
   const user = useAuthStore((s) => s.user)
+  const setUser = useAuthStore((s) => s.setUser)
+  const navigate = useNavigate()
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [step, setStep] = useState<'plans' | 'payment' | 'upload' | 'success' | 'failed'>('plans')
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'upi' | 'phonepay' | null>(null)
   const [screenshot, setScreenshot] = useState<File | null>(null)
   const [transactionId, setTransactionId] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const trialExpired = user && !user.is_premium && !user.is_trial_active && user.plan_name === 'TRIAL EXPIRED'
+
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) return
+    const { data: profile } = await authService.getProfile(user.id)
+    if (profile) {
+      setUser(profile)
+    }
+  }, [user?.id, setUser])
 
   const planFeatures = {
     basic: { color: 'from-blue-500 to-blue-600', icon: Shield, features: ['25 Days Access', 'End-to-End Encryption', 'No Ads', 'Priority Support'] },
@@ -60,6 +74,8 @@ export function PremiumPage() {
           if (error) throw error
           setStep('success')
           toast.success('Premium Activated Successfully!')
+          await refreshProfile()
+          setTimeout(() => navigate('/'), 2000)
         } catch (err) {
           console.error('Payment verification failed:', err)
           setStep('failed')
@@ -97,6 +113,8 @@ export function PremiumPage() {
       if (error) throw error
       setStep('success')
       toast.success('Payment submitted! Pending admin verification.')
+      await refreshProfile()
+      setTimeout(() => navigate('/'), 2000)
     } catch (err) {
       setStep('failed')
       toast.error('Failed to submit payment')
@@ -131,7 +149,17 @@ export function PremiumPage() {
       </div>
 
       {step === 'plans' && (
-        <div className="grid md:grid-cols-3 gap-6">
+        <>
+          {trialExpired && (
+            <div className="bg-red-900/20 rounded-xl p-4 border border-red-900/30 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-300">Your free trial has expired</p>
+                <p className="text-xs text-red-400/80 mt-1">Choose a premium plan to continue using all features including AI moderation.</p>
+              </div>
+            </div>
+          )}
+          <div className="grid md:grid-cols-3 gap-6">
           {Object.entries(PREMIUM_PLANS).map(([id, plan]) => {
             const pf = planFeatures[id as keyof typeof planFeatures]
             const Icon = pf.icon
@@ -161,7 +189,7 @@ export function PremiumPage() {
             )
           })}
         </div>
-      )}
+      </>)}
       
 
       {step === 'payment' && selectedPlanData && (
@@ -261,7 +289,7 @@ export function PremiumPage() {
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
           <h2 className="text-xl font-bold">Premium Activated Successfully!</h2>
           <p className="text-gray-500">Your premium plan is now active. Enjoy all the features.</p>
-          <Button onClick={() => window.location.href = '/'}>Go to Chat</Button>
+          <Button onClick={() => navigate('/')}>Go to Chat</Button>
         </div>
       )}
 

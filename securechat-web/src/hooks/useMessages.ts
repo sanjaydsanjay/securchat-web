@@ -45,9 +45,7 @@ export function useMessages(chatId: string | null) {
     setLoading(true)
     const { data, error } = await messageService.getMessages(chatId, PAGE_SIZE, 0)
     if (data && !error) {
-      const blocked = useAuthStore.getState().user?.blocked_users || []
-      const filtered = data.filter((m: Message) => !blocked.includes(m.sender_unique_id))
-      const validated = filtered.map((m: Message) => {
+      const validated = data.map((m: Message) => {
         const contentCheck = messageContentSchema.safeParse(m.content)
         if (!contentCheck.success) {
           m.content = '[Message content blocked]'
@@ -108,9 +106,7 @@ export function useMessages(chatId: string | null) {
 
     if (data && !error) {
       const reversed = data.reverse()
-      const blocked = useAuthStore.getState().user?.blocked_users || []
-      const filtered = reversed.filter((m: Message) => !blocked.includes(m.sender_unique_id))
-      const decrypted = await Promise.all(filtered.map(decryptE2EContent))
+      const decrypted = await Promise.all(reversed.map(decryptE2EContent))
       setMessages(chatId, [...decrypted, ...currentMsgs])
       setHasMore(data.length >= PAGE_SIZE)
     }
@@ -143,10 +139,6 @@ export function useMessages(chatId: string | null) {
           if (!mountedRef.current) return
           const msg = payload.new
           if (msg.is_deleted) return
-
-          const blocked = useAuthStore.getState().user?.blocked_users || []
-          if (blocked.includes(msg.sender_unique_id)) return
-
           if (msg.sender_unique_id === user?.unique_id) return
 
           const contentCheck = messageContentSchema.safeParse(msg.content)

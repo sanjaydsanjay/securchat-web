@@ -35,6 +35,7 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore()
+  const location = useLocation()
 
   if (loading) {
     return (
@@ -50,6 +51,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (user.is_banned) {
     return <Navigate to="/banned" replace />
+  }
+
+  const trialExpired = !user.is_premium && !user.is_trial_active && user.plan_name === 'TRIAL EXPIRED'
+  if (trialExpired && location.pathname !== '/premium') {
+    return <Navigate to="/premium" replace />
   }
 
   return <>{children}</>

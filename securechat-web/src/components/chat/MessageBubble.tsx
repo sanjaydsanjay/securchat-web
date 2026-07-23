@@ -1,9 +1,10 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useUserStore } from '@/stores/userStore'
+import { useBlock } from '@/hooks/useBlock'
 import { MessageReactionsDisplay } from './MessageReactions'
 import { ReactionPicker } from './ReactionPicker'
-import { Check, CheckCheck, Clock, AlertCircle, Lock, Pencil, Trash2, Ban } from 'lucide-react'
+import { Check, CheckCheck, Clock, AlertCircle, Lock, Pencil, Trash2, Ban, Shield, ShieldOff } from 'lucide-react'
 import type { Message } from '@/types/message'
 import type { Chat } from '@/types/chat'
 
@@ -32,7 +33,9 @@ export const MessageBubble = memo(function MessageBubble({
 }: MessageBubbleProps) {
   const user = useAuthStore((s) => s.user)
   const starredMessages = useUserStore((s) => s.starredMessages)
+  const { blockUser, unblockUser, isBlocked } = useBlock()
   const isOwn = message.sender_unique_id === user?.unique_id
+  const senderBlocked = !isOwn && isBlocked(message.sender_unique_id)
   const [showActions, setShowActions] = useState(false)
   const [showReactionPicker, setShowReactionPicker] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
@@ -185,6 +188,23 @@ export const MessageBubble = memo(function MessageBubble({
         >
           {isStarred ? '★' : '☆'} {isStarred ? 'Unstar' : 'Star'}
         </button>
+        {!isOwn && (
+          senderBlocked ? (
+            <button
+              onClick={() => { unblockUser(message.sender_unique_id); setContextMenu(null) }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <ShieldOff className="w-4 h-4" /> Unblock User
+            </button>
+          ) : (
+            <button
+              onClick={() => { blockUser(message.sender_unique_id); setContextMenu(null) }}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              <Shield className="w-4 h-4" /> Block User
+            </button>
+          )
+        )}
       </div>
     )
   }
@@ -209,6 +229,11 @@ export const MessageBubble = memo(function MessageBubble({
         onMouseLeave={() => { if (!isMobile) { setShowActions(false); setContextMenu(null) } }}
         onContextMenu={handleContextMenu}
       >
+        {senderBlocked && (
+          <div className="mb-1.5 px-2 py-0.5 bg-gray-900/80 rounded text-[10px] text-gray-400 font-medium flex items-center gap-1">
+            <Ban className="w-2.5 h-2.5" /> Blocked
+          </div>
+        )}
         {message.reply_to_id && message.reply_to && (
           <div className={`mb-2 pl-2.5 border-l-2 rounded-sm ${isOwn ? 'border-white/40' : 'border-gray-300'}`}>
             <p className={`text-[11px] font-medium ${isOwn ? 'text-white/80' : 'text-[#8a99a8]'}`}>
