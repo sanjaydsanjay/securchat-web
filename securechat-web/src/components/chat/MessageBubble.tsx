@@ -221,9 +221,11 @@ export const MessageBubble = memo(function MessageBubble({
     >
       <div
         className={`relative max-w-[75%] md:max-w-[65%] px-[18px] py-[14px] text-[13.5px] leading-relaxed ${
-          isOwn
-            ? 'bg-[#5c7cfa] text-white rounded-[18px] rounded-tr-[4px]'
-            : 'bg-white text-[#2b3a4a] rounded-[18px] rounded-tl-[4px]'
+          senderBlocked
+            ? 'bg-gray-800 text-gray-400 rounded-[18px] rounded-tl-[4px] line-through opacity-60'
+            : isOwn
+              ? 'bg-[#5c7cfa] text-white rounded-[18px] rounded-tr-[4px]'
+              : 'bg-white text-[#2b3a4a] rounded-[18px] rounded-tl-[4px]'
         } ${isSelected ? 'ring-2 ring-[#5c7cfa] ring-offset-2 ring-offset-[#f1f3f9]' : ''}`}
         onMouseEnter={() => !isMobile && setShowActions(true)}
         onMouseLeave={() => { if (!isMobile) { setShowActions(false); setContextMenu(null) } }}
