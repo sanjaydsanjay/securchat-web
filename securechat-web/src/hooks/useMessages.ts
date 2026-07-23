@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabaseConfig'
 import { messageService } from '@/services/messageService'
 import { aiService } from '@/services/aiService'
@@ -7,6 +8,7 @@ import { useChatStore } from '@/stores/chatStore'
 import { useAuthStore } from '@/stores/authStore'
 import { importKey, encryptMessage, decryptMessage } from '@/utils/encryption'
 import { messageContentSchema } from '@/utils/validators'
+import toast from 'react-hot-toast'
 import type { Message, SendMessagePayload } from '@/types/message'
 import type { AIAnalysisResponse } from '@/types/ai'
 
@@ -20,6 +22,7 @@ export function useMessages(chatId: string | null) {
   const user = useAuthStore((s) => s.user)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const mountedRef = useRef(false)
+  const navigate = useNavigate()
 
   // Helper to decrypt E2E messages
   const decryptE2EContent = useCallback(async (msg: Message): Promise<Message> => {
@@ -334,13 +337,6 @@ export function useMessages(chatId: string | null) {
         if (aiResult.data) {
           const result = aiResult.data as AIAnalysisResponse
           const updatedMsg = useChatStore.getState().messages[chatId]?.find((m) => m.id === data.id)
-          if (updatedMsg) {
-            updateMessage(chatId, data.id, {
-              ai_analyzed: true,
-              ai_threat_level: result.risk === 'critical' ? 'critical' : result.risk === 'high' ? 'high' : result.risk === 'medium' ? 'medium' : result.risk === 'low' ? 'low' : 'none',
-              ai_categories: result.category && result.category !== 'none' ? [result.category] : [],
-            } as Partial<Message>)
-          }
 
           if (!result.allow) {
             console.warn('[useMessages] Message blocked by AI analysis', {
@@ -349,6 +345,18 @@ export function useMessages(chatId: string | null) {
               category: result.category,
               warning: result.warning,
             })
+
+            removeMessage(chatId, data.id)
+
+            await supabase
+              .from('messages')
+              .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+              .eq('id', data.id)
+
+            toast.error(
+              `Content blocked: ${result.category} - ${result.warning}`,
+              { duration: 6000 }
+            )
           }
 
           if (result.ban) {
@@ -358,8 +366,24 @@ export function useMessages(chatId: string | null) {
               category: result.category,
             })
 
-            const bannedUser = { ...user, is_banned: true, ban_reason: result.warning || 'Violation of content policy' }
+            const banReason = result.warning || `Violation detected: ${result.category}`
+            const bannedUser = { ...user, is_banned: true, ban_reason: banReason }
             useAuthStore.getState().setUser(bannedUser)
+
+            toast.error(
+              `Account Blacklisted: ${result.category.replace(/_/g, ' ')} - Your account has been suspended.`,
+              { duration: 8000 }
+            )
+
+            setTimeout(() => navigate('/banned'), 1500)
+          }
+
+          if (result.allow && updatedMsg) {
+            updateMessage(chatId, data.id, {
+              ai_analyzed: true,
+              ai_threat_level: result.risk === 'critical' ? 'critical' : result.risk === 'high' ? 'high' : result.risk === 'medium' ? 'medium' : result.risk === 'low' ? 'low' : 'none',
+              ai_categories: result.category && result.category !== 'none' ? [result.category] : [],
+            } as Partial<Message>)
           }
         }
 
