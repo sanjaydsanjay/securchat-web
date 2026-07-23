@@ -98,4 +98,19 @@ export const userService = {
       .single()
     return { data: (data?.blocked_users as number[]) || null, error }
   },
+
+  async isBlockedByUser(targetUniqueId: number, currentUniqueId: number): Promise<{ blocked: boolean; error: unknown }> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('blocked_users')
+        .eq('unique_id', targetUniqueId)
+        .maybeSingle()
+      if (error) return { blocked: false, error }
+      const blockedList = (data?.blocked_users as number[]) || []
+      return { blocked: blockedList.includes(currentUniqueId), error: null }
+    } catch (err) {
+      return { blocked: false, error: err }
+    }
+  },
 }

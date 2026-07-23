@@ -6,14 +6,16 @@ import { TypingIndicator } from './TypingIndicator'
 import { Loader } from '@/components/shared/Loader'
 import { Input } from '@/components/ui/input'
 import { Dialog } from '@/components/ui/dialog'
-import { Search, X, Lock, Trash2 } from 'lucide-react'
+import { Search, X, Lock, Trash2, Ban } from 'lucide-react'
 import { useMessages } from '@/hooks/useMessages'
 import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import { useChatStore } from '@/stores/chatStore'
 import { useUserStore } from '@/stores/userStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useBlock } from '@/hooks/useBlock'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { messageService } from '@/services/messageService'
+import { userService } from '@/services/userService'
 import { MessageActionSheet } from './MessageActionSheet'
 import { ForwardModal } from './ForwardModal'
 import { MessageInfoModal } from './MessageInfoModal'
@@ -36,6 +38,7 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [forwardMessage, setForwardMessage] = useState<Message | null>(null)
   const [infoMessage, setInfoMessage] = useState<Message | null>(null)
+  const [isBlockedByOther, setIsBlockedByOther] = useState(false)
   const isMobile = useIsMobile()
   const { messages, loading, hasMore, loadingMore, loadMore, sendMessage, editMessage, deleteMessage, addReaction, toggleStar, markAllAsRead } = useMessages(chatId)
   const { startTyping } = useTypingIndicator(chatId)
@@ -44,6 +47,8 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
   const { addStarredMessage, removeStarredMessage } = useUserStore()
   const user = useAuthStore((s) => s.user)
   const chat = chats.find((c) => c.id === chatId)
+  const { blockedUsers } = useBlock()
+  const otherUserId = chat ? (chat.participant_1_id === user?.unique_id ? chat.participant_2_id : chat.participant_1_id) : null
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -78,6 +83,13 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
     const cleanup = initScreenshotDetection(chatId, user.unique_id)
     return cleanup
   }, [chatId, user?.unique_id])
+
+  useEffect(() => {
+    if (!otherUserId || !user?.unique_id) return
+    userService.isBlockedByUser(otherUserId, user.unique_id).then((res) => {
+      setIsBlockedByOther(res.blocked)
+    })
+  }, [otherUserId, user?.unique_id, blockedUsers])
 
   useEffect(() => {
     if (!loading && messages.length > 0 && scrollRef.current) {
@@ -128,6 +140,10 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
   }, [setSearchQuery, setSearchResults])
 
   const handleSend = async (payload: SendMessagePayload) => {
+    if (isBlockedByOther) {
+      toast.error('You are blocked by this user. Cannot send messages.')
+      return
+    }
     const result = await sendMessage({ ...payload, reply_to_id: replyTo?.id ?? null })
     if (result?.error) {
       console.error('[ChatWindow] Send failed:', result.error)
@@ -318,6 +334,15 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
         <div ref={bottomRef} />
       </div>
 
+      {isBlockedByOther && (
+        <div className="mx-3 md:mx-[30px] mb-2 px-4 py-3 bg-red-900/20 border border-red-900/30 rounded-xl flex items-center gap-3">
+          <Ban className="w-5 h-5 text-red-400 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-red-300">You are blocked</p>
+            <p className="text-xs text-red-400/80">You cannot send messages to this user.</p>
+          </div>
+        </div>
+      )}
       <MessageInput
         chatId={chatId}
         replyTo={replyTo}
@@ -327,6 +352,7 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
         onSaveEdit={handleSaveEdit}
         onSend={handleSend}
         onTyping={handleTyping}
+        disabled={isBlockedByOther}
       />
 
       {isMobile && (
