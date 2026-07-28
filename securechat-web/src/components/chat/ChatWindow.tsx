@@ -12,10 +12,10 @@ import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import { useChatStore } from '@/stores/chatStore'
 import { useUserStore } from '@/stores/userStore'
 import { useAuthStore } from '@/stores/authStore'
-import { useBlock } from '@/hooks/useBlock'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { messageService } from '@/services/messageService'
 import { userService } from '@/services/userService'
+import { supabase } from '@/lib/supabaseConfig'
 import { MessageActionSheet } from './MessageActionSheet'
 import { ForwardModal } from './ForwardModal'
 import { MessageInfoModal } from './MessageInfoModal'
@@ -47,8 +47,7 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
   const { addStarredMessage, removeStarredMessage } = useUserStore()
   const user = useAuthStore((s) => s.user)
   const chat = chats.find((c) => c.id === chatId)
-  const { blockedUsers } = useBlock()
-  const otherUserId = chat ? (chat.participant_1_id === user?.unique_id ? chat.participant_2_id : chat.participant_1_id) : null
+  const otherUserId = chat && user ? (chat.participant_1_id === user.unique_id ? chat.participant_2_id : chat.participant_1_id) : null
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -86,10 +85,34 @@ function ChatWindowInner({ chatId }: ChatWindowProps) {
 
   useEffect(() => {
     if (!otherUserId || !user?.unique_id) return
+
     userService.isBlockedByUser(otherUserId, user.unique_id).then((res) => {
       setIsBlockedByOther(res.blocked)
     })
-  }, [otherUserId, user?.unique_id, blockedUsers])
+
+    const channel = supabase
+      .channel(`user-blocked:${otherUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `unique_id=eq.${otherUserId}`,
+        },
+        (payload) => {
+          const newBlocked = (payload.new as { blocked_users?: number[] })?.blocked_users
+          if (Array.isArray(newBlocked)) {
+            setIsBlockedByOther(newBlocked.includes(user.unique_id!))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [otherUserId, user?.unique_id])
 
   useEffect(() => {
     if (!loading && messages.length > 0 && scrollRef.current) {

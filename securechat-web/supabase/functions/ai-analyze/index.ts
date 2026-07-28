@@ -1,43 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { handleCors, corsHeaders } from '../_shared/cors.ts'
 
 const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || ''
 const MODEL = Deno.env.get('AI_MODEL') || 'openai/gpt-4o-mini'
-
-const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') || '').split(',').concat([
-  'http://localhost:5179',
-  'http://127.0.0.1:5179',
-  'http://localhost:3000',
-  'http://10.149.61.225:5179',
-]).filter(Boolean)
-
-function isOriginAllowed(origin: string | null): boolean {
-  if (!origin) return false
-  const originLower = origin.toLowerCase()
-  return ALLOWED_ORIGINS.some((allowed) => {
-    if (allowed.startsWith('https://*.')) {
-      return originLower.endsWith(allowed.slice(9).toLowerCase())
-    }
-    if (allowed.endsWith(':5179') && allowed.startsWith('http://')) {
-      const url = new URL(origin)
-      return url.port === '5179' && url.protocol === 'http:'
-    }
-    return originLower === allowed.toLowerCase()
-  })
-}
-
-function getCorsHeaders(request: Request): Record<string, string> {
-  const origin = request.headers.get('origin')
-  const allowOrigin = origin && isOriginAllowed(origin) ? origin : 'http://localhost:5179'
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
-  }
-}
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
@@ -55,14 +21,22 @@ interface ModerationResult {
 }
 
 serve(async (req: Request) => {
-  const corsHeaders = getCorsHeaders(req)
-  const startTime = Date.now()
-
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+  const corsResponse = handleCors(req)
+  if (corsResponse) {
+    return corsResponse
   }
 
+  const resHeaders = { ...corsHeaders(req), 'Content-Type': 'application/json' }
+  const startTime = Date.now()
+
   try {
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: `Method ${req.method} not allowed` }),
+        { status: 405, headers: resHeaders }
+      )
+    }
+
     const { message_id, content, sender_unique_id } = await req.json()
 
     if (!content || !message_id) {
@@ -70,7 +44,7 @@ serve(async (req: Request) => {
         JSON.stringify({ allow: true, risk: 'none', category: 'none', warning: '' }),
         {
           status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: resHeaders,
         }
       )
     }
@@ -196,7 +170,7 @@ serve(async (req: Request) => {
       ban: shouldBan,
     }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: resHeaders,
     })
   } catch (error) {
     console.error(JSON.stringify({
@@ -215,7 +189,7 @@ serve(async (req: Request) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: resHeaders,
       }
     )
   }
